@@ -57,7 +57,7 @@ def search():
         results = []
         for item in knowledge_base:
             similarity = cosine_similarity(query_embedding, item['embedding'])
-            if similarity > 0.3:  # Threshold for relevance
+            if similarity > 0.1:  # Lower threshold for more results
                 results.append({
                     'title': item['title'],
                     'content': item['content'][:300] + ('...' if len(item['content']) > 300 else ''),
