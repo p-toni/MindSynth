@@ -8,7 +8,8 @@ Preferred communication style: Simple, everyday language.
 Design philosophy: "things should be subtle, aesthetic comes from taste" - values restraint over obvious effects.
 Visual preferences: Clean minimalism with purposeful design choices, avoid excessive patterns or grids.
 Circuit board aesthetics: Prefers authentic PCB patterns over simple grids - referenced CodePen examples for realistic trace routing and component placement.
-Color scheme: Exclusively white, black, and gray tones - no color accents or highlights.
+Color scheme: Evolved from monochrome to dark neon theme - black background with blue (#3498db) glitch accents.
+Glitch effects: Implemented pulsing grid background and subtle neon border effects as requested.
 
 # System Architecture
 
