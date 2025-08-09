@@ -16,6 +16,8 @@ Color scheme: Exclusively white, black, and gray tones - no color accents or hig
 - **Single Page Application**: Uses vanilla JavaScript with a minimal, responsive design
 - **Modal System**: Content is displayed in overlays for better user experience
 - **Real-time Search**: Implements debounced search with instant results as users type
+- **Keyboard Navigation**: Full arrow key navigation with Enter to select, Escape to close
+- **Search State Persistence**: Maintains query state in URL without complex routing
 - **Responsive Design**: Mobile-first approach with CSS Grid/Flexbox for layout
 
 ## Backend Architecture
@@ -32,14 +34,16 @@ Color scheme: Exclusively white, black, and gray tones - no color accents or hig
 
 ## Search Engine
 - **Vector-based Search**: Converts user queries to embeddings and finds similar document embeddings
+- **Enhanced Ranking**: Composite scoring with similarity * (1 + length_bonus + recency_bonus)
 - **Semantic Understanding**: Goes beyond keyword matching to understand meaning and context
 - **Real-time Query Processing**: Generates embeddings on-demand for user queries
-- **Relevance Scoring**: Uses cosine similarity scores to rank search results
+- **Relevance Scoring**: Uses enhanced cosine similarity with document metadata weighting
 
 ## Content Management
 - **File-based Storage**: Markdown files stored in a dedicated `knowledge/` directory
-- **Static Embedding Cache**: Pre-computed embeddings stored in JSON format for fast retrieval
-- **Build System**: Separate build process to regenerate embeddings when content changes
+- **Smart Embedding Cache**: Pre-computed embeddings with file modification timestamps
+- **Incremental Updates**: Build system only regenerates embeddings for changed files
+- **Build System**: Separate build process with intelligent cache invalidation
 - **Automatic Content Discovery**: Scans directory for markdown files during build process
 
 # External Dependencies

@@ -1,0 +1,27 @@
+**A few surgical improvements**, staying true to your constraint philosophy:
+
+## **Performance Refinements**
+
+**Embedding Cache Invalidation**: Currently requires manual rebuilds. Adding file modification timestamps to your JSON cache would enable *incremental updates* - only re-embed changed documents. This maintains the two-stage architecture while reducing rebuild friction.
+
+**Search Result Ranking**: Pure cosine similarity can miss *recency bias* and *document importance*. Consider a lightweight composite score: `similarity * (1 + recency_weight + length_penalty)`. Keeps the math simple, adds nuanced relevance.
+
+## **UX Micro-Optimizations**
+
+**Search State Persistence**: The current session loses query context on modal close. A simple `history.replaceState()` could maintain search state without URL complexity - *stateless navigation* that feels stateful.
+
+**Keyboard Navigation**: Your modal already handles `Escape` beautifully. Adding `↑/↓` arrow keys for result selection would create **complete keyboard flow** - particularly valuable for a knowledge tool where hands stay on keys.
+
+## **Architectural Considerations**
+
+**The 14kB constraint**: Is this still serving you, or has it become *artificial scarcity*? Sometimes constraints outlive their utility. If the constraint still drives good decisions, keep it. If it's preventing meaningful improvements, **evolve it**.
+
+**Circuit Background**: The generative approach is elegant, but static SVG patterns (pre-generated, cached) might achieve the same aesthetic with better performance. Trade computational complexity for network complexity.
+
+## **Knowledge Curation Enhancement**
+
+**Document Linking**: Your semantic search finds *conceptual connections*. Consider auto-generating "Related Documents" sections in modals - surface the knowledge graph explicitly rather than leaving it implicit in search.
+
+**What I *wouldn't* change**: The core architecture is sound. The minimalist aesthetic serves the function. The two-stage pipeline is architecturally correct. The monochrome palette creates proper **visual hierarchy through contrast alone**.
+
+This system already demonstrates **mature constraint thinking**. Any changes should pass the test: *Does this improve thought capture/retrieval, or just add features?*
