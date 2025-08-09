@@ -10,29 +10,80 @@
     <svg class="circuit-bg" xmlns="http://www.w3.org/2000/svg"></svg>
     
     <div class="container">
-        <header>
-            <h1>knowledge</h1>
-            <p>semantic search • {{ total_docs }} documents indexed</p>
-        </header>
+        <nav class="breadcrumb">
+            <span>New Identity</span>
+            <span>/</span>
+            <span>Next Look</span>
+            <span>/</span>
+            <span class="current">New Offer</span>
+        </nav>
 
-        <main>
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="search concepts, ideas, connections..." autocomplete="off">
-                <div class="search-status" id="searchStatus">ready</div>
+        <div class="grid-layout">
+            <div class="intro-card">
+                <h1>Let's<br><strong>Explore</strong><br>and Design<br>Your Vision</h1>
+                <div class="signature">
+                    <p>Let's work<br>together.</p>
+                    <div class="signature-line"></div>
+                </div>
             </div>
 
-            <div class="results" id="results">
-                <div class="welcome">
-                    <h3>intelligent document analysis</h3>
-                    <p>contextual understanding through vector embeddings</p>
-                    <div class="features">
-                        <span class="feature">semantic search</span>
-                        <span class="feature">pattern matching</span>
-                        <span class="feature">private index</span>
+            <div class="search-card dark-card">
+                <div class="card-header">
+                    <h3>Knowledge Search</h3>
+                    <p>Semantic Index</p>
+                </div>
+                <div class="search-interface">
+                    <input type="text" id="searchInput" placeholder="search concepts, ideas, connections..." autocomplete="off">
+                    <div class="search-status" id="searchStatus">ready</div>
+                </div>
+            </div>
+
+            <div class="stats-card light-card">
+                <div class="stats-header">
+                    <h2>Aa123</h2>
+                    <div class="stats-label">Typography</div>
+                </div>
+                <div class="stats-content">
+                    <div class="font-preview">{{ total_docs }}</div>
+                    <div class="font-details">
+                        <p>documents indexed</p>
+                        <p>semantic vectors</p>
+                        <p>pattern analysis</p>
                     </div>
                 </div>
             </div>
-        </main>
+
+            <div class="palette-card">
+                <div class="color-strip">
+                    <div class="color-swatch dark"></div>
+                    <div class="color-swatch gray1"></div>
+                    <div class="color-swatch gray2"></div>
+                    <div class="color-swatch gray3"></div>
+                    <div class="color-swatch light"></div>
+                </div>
+                <div class="palette-info">
+                    <h4>KOSMA</h4>
+                    <p>www.kosma.pro</p>
+                </div>
+            </div>
+
+            <div class="logo-card dark-card">
+                <div class="logo-symbol">K</div>
+                <div class="logo-label">Symbol</div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="welcome">
+                <h3>intelligent document analysis</h3>
+                <p>contextual understanding through vector embeddings</p>
+                <div class="features">
+                    <span class="feature">semantic search</span>
+                    <span class="feature">pattern matching</span>
+                    <span class="feature">private index</span>
+                </div>
+            </div>
+        </div>
 
         <div class="modal" id="contentModal">
             <div class="modal-content">

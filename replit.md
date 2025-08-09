@@ -14,12 +14,12 @@ Glitch effects: Implemented pulsing grid background and subtle neon border effec
 # System Architecture
 
 ## Frontend Architecture
-- **Single Page Application**: Uses vanilla JavaScript with a minimal, responsive design
+- **Card-Based Layout**: Modern portfolio-inspired grid design with distinct functional areas
 - **Modal System**: Content is displayed in overlays for better user experience
 - **Real-time Search**: Implements debounced search with instant results as users type
 - **Keyboard Navigation**: Full arrow key navigation with Enter to select, Escape to close
 - **Search State Persistence**: Maintains query state in URL without complex routing
-- **Responsive Design**: Mobile-first approach with CSS Grid/Flexbox for layout
+- **Responsive Design**: CSS Grid layout that adapts from 3-column to single-column on mobile
 
 ## Backend Architecture
 - **Flask Web Framework**: Lightweight Python web server for handling HTTP requests
