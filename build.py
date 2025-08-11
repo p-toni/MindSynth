@@ -35,16 +35,31 @@ def is_url_only(content):
     return False
 
 def create_url_preview(url):
-    """Create a simple URL preview without fetching full content"""
+    """Create URL preview with embed support for Twitter/X"""
     try:
-        # Extract domain for basic preview
         from urllib.parse import urlparse
         parsed = urlparse(url)
         domain = parsed.netloc.replace('www.', '')
         
-        # Create simple preview content
-        preview_title = f"Link: {domain}"
-        preview_content = f"# {preview_title}\n\n**URL:** {url}\n\n*Click to visit the original source*"
+        # Check if it's a Twitter/X URL
+        if 'twitter.com' in domain or 'x.com' in domain:
+            # Extract tweet ID for embed
+            tweet_id = url.split('/')[-1].split('?')[0]
+            preview_title = f"Tweet Preview"
+            preview_content = f"""# {preview_title}
+
+<div class="tweet-embed" data-tweet-id="{tweet_id}" data-url="{url}">
+    <blockquote class="twitter-tweet">
+        <a href="{url}">View Tweet</a>
+    </blockquote>
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</div>
+
+**Source:** [{url}]({url})"""
+        else:
+            # Regular link preview for other URLs
+            preview_title = f"Link: {domain}"
+            preview_content = f"# {preview_title}\n\n**URL:** {url}\n\n*Click to visit the original source*"
         
         logging.info(f"Created preview for: {url}")
         return preview_title, preview_content
