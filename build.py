@@ -10,6 +10,10 @@ import re
 from pathlib import Path
 from openai import OpenAI
 import trafilatura
+from urllib.parse import urlparse, quote
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+import html as html_lib
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -34,38 +38,92 @@ def is_url_only(content):
         return re.match(url_pattern, lines[0]) is not None
     return False
 
-def create_url_preview(url):
-    """Create URL preview with embed support for Twitter/X"""
+def _http_get_json(url: str):
+    """Minimal JSON fetcher using stdlib to avoid extra deps."""
     try:
-        from urllib.parse import urlparse
+        req = Request(url, headers={"User-Agent": "MindSynth/1.0"})
+        with urlopen(req, timeout=10) as resp:
+            data = resp.read()
+            return json.loads(data.decode("utf-8", errors="ignore"))
+    except (URLError, HTTPError, TimeoutError, ValueError) as e:
+        logging.warning(f"HTTP JSON fetch failed for {url}: {e}")
+        return None
+
+
+def _strip_html(html: str) -> str:
+    """Very small HTML-to-text helper for embedding; keeps text only."""
+    # Remove script/style blocks
+    html = re.sub(r"<script[\s\S]*?</script>", " ", html, flags=re.I)
+    html = re.sub(r"<style[\s\S]*?</style>", " ", html, flags=re.I)
+    # Replace <br> and block tags with newlines
+    html = re.sub(r"<\s*(br|/p|/div|/li|/h[1-6])\s*>", "\n", html, flags=re.I)
+    # Strip remaining tags
+    text = re.sub(r"<[^>]+>", " ", html)
+    # Unescape entities and collapse whitespace
+    text = html_lib.unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _twitter_oembed(url: str):
+    """Try to fetch Twitter/X oEmbed HTML snippet without auth."""
+    # Normalize x.com to twitter.com for the oEmbed endpoint
+    parsed = urlparse(url)
+    if parsed.netloc.endswith("x.com"):
+        url = url.replace(parsed.netloc, "twitter.com")
+
+    oembed_url = (
+        "https://publish.twitter.com/oembed?omit_script=true&hide_thread=true&align=center&dnt=true&url="
+        + quote(url, safe="")
+    )
+    data = _http_get_json(oembed_url)
+    if data and isinstance(data, dict) and data.get("html"):
+        return data["html"], data.get("author_name")
+    return None, None
+
+
+def create_url_preview(url):
+    """Create URL preview with embed support for Twitter/X, with text for embedding."""
+    try:
         parsed = urlparse(url)
         domain = parsed.netloc.replace('www.', '')
-        
-        # Check if it's a Twitter/X URL
+
         if 'twitter.com' in domain or 'x.com' in domain:
-            # Extract tweet ID for embed
-            tweet_id = url.split('/')[-1].split('?')[0]
-            preview_title = f"Tweet Preview"
-            # Use data attribute to identify twitter embeds
+            # Prefer official oEmbed
+            embed_html, author = _twitter_oembed(url)
+            preview_title = "Tweet Preview" if not author else f"Tweet by {author}"
+            if not embed_html:
+                # Fallback: basic blockquote linking to the tweet
+                embed_html = (
+                    f'<blockquote class="twitter-tweet" data-dnt="true" data-theme="light">'
+                    f'<a href="{url}">View Tweet</a>'
+                    f"</blockquote>"
+                )
+
+            # Plain text for embedding derived from the embed HTML
+            embed_text = _strip_html(embed_html)
+
             preview_content = f"""# {preview_title}
 
 <div class="twitter-embed-container">
-    <blockquote class="twitter-tweet" data-dnt="true" data-theme="light">
-        <a href="{url}">View Tweet</a>
-    </blockquote>
+{embed_html}
 </div>
 
 **Source:** [{url}]({url})"""
-        else:
-            # Regular link preview for other URLs
-            preview_title = f"Link: {domain}"
-            preview_content = f"# {preview_title}\n\n**URL:** {url}\n\n*Click to visit the original source*"
-        
+
+            logging.info(f"Created tweet preview for: {url}")
+            return preview_title, preview_content, embed_text
+
+        # Regular link preview for other URLs
+        preview_title = f"Link: {domain}"
+        preview_content = f"# {preview_title}\n\n**URL:** {url}\n\n*Click to visit the original source*"
         logging.info(f"Created preview for: {url}")
-        return preview_title, preview_content
+        # For non-Twitter pages, embed the preview text itself
+        return preview_title, preview_content, _strip_html(preview_content)
+
     except Exception as e:
         logging.warning(f"Failed to create preview for {url}: {e}")
-        return None, None
+        return None, None, None
 
 def extract_title(content, original_url=None):
     """Extract title from markdown content or use web title"""
@@ -114,10 +172,12 @@ def process_md_files():
         if is_url_only(content):
             is_url = True
             url = content.strip()
-            web_title, preview_content = create_url_preview(url)
+            web_title, preview_content, preview_text = create_url_preview(url)
             if preview_content:
-                # Use preview content for embedding
+                # Use preview content for display, but embed text extracted from preview
                 content = preview_content
+                # Replace original_content with the URL only for clarity
+                original_content = url
                 logging.info(f"Created preview for {url}")
             else:
                 logging.warning(f"Could not create preview for {url}, using URL as content")
@@ -127,7 +187,9 @@ def process_md_files():
         
         # Generate embedding
         try:
-            embedding = get_embedding(content)
+            # If URL-only and we built a preview, use extracted text for embeddings
+            text_for_embedding = preview_text if is_url and 'preview_text' in locals() and preview_text else content
+            embedding = get_embedding(text_for_embedding)
             
             knowledge_base.append({
                 'file': md_file.name,
@@ -135,7 +197,7 @@ def process_md_files():
                 'content': content,
                 'original_content': original_content,
                 'is_url': is_url,
-                'source_url': content.strip() if is_url else None,
+                'source_url': url if is_url else None,
                 'embedding': embedding
             })
             
