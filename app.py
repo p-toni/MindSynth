@@ -5,12 +5,22 @@ from flask import Flask, render_template, request, jsonify
 import numpy as np
 from openai import OpenAI
 import markdown
+from dotenv import load_dotenv
+from cachetools import LRUCache
+import bleach
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
+load_dotenv()
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-key-change-in-production")
+
+# Rate limiting
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per minute"])  # global cap
 
 # Initialize OpenAI client
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "your-openai-api-key")
@@ -37,41 +47,90 @@ def get_embedding(text):
     )
     return response.data[0].embedding
 
+# Cache for query embeddings and search responses
+embedding_cache = LRUCache(maxsize=256)
+results_cache = LRUCache(maxsize=128)
+
+def get_query_embedding_cached(query: str):
+    if query in embedding_cache:
+        return embedding_cache[query]
+    emb = get_embedding(query)
+    embedding_cache[query] = emb
+    return emb
+
+def allowed_html():
+    tags = [
+        'p','ul','ol','li','strong','em','code','pre','a','blockquote','h1','h2','h3','h4','h5','h6','div','span','br'
+    ]
+    attrs = {
+        'a': ['href','title','target','rel'],
+        'blockquote': ['class','data-dnt','data-theme','align'],
+        'div': ['class'],
+        'span': ['class']
+    }
+    return tags, attrs
+
 @app.route('/')
 def index():
     """Main page"""
     return render_template('index.html', total_docs=len(knowledge_base))
 
 @app.route('/search')
+@limiter.limit("60/minute")
 def search():
     """Search endpoint"""
     query = request.args.get('q', '').strip()
+    try:
+        limit = max(1, min(50, int(request.args.get('limit', 20))))
+        offset = max(0, int(request.args.get('offset', 0)))
+    except ValueError:
+        limit, offset = 20, 0
     if not query or not knowledge_base:
-        return jsonify([])
+        return jsonify({"total": 0, "results": []})
     
     try:
-        # Get query embedding
-        query_embedding = get_embedding(query)
-        
-        # Calculate similarities
-        results = []
+        cache_key = f"{query}|{limit}|{offset}"
+        if cache_key in results_cache:
+            return jsonify(results_cache[cache_key])
+
+        query_embedding = get_query_embedding_cached(query)
+
+        # Calculate similarities across chunks if present
+        scored = []
         for item in knowledge_base:
-            similarity = cosine_similarity(query_embedding, item['embedding'])
-            if similarity > 0.1:  # Lower threshold for more results
-                results.append({
-                    'title': item['title'],
-                    'content': item['content'][:300] + ('...' if len(item['content']) > 300 else ''),
-                    'similarity': float(similarity),
-                    'file': item['file']
-                })
-        
-        # Sort by similarity and return top 5
-        results.sort(key=lambda x: x['similarity'], reverse=True)
-        return jsonify(results[:5])
+            if 'chunks' in item and item['chunks']:
+                for idx, ch in enumerate(item['chunks']):
+                    sim = cosine_similarity(query_embedding, ch['embedding'])
+                    if sim > 0.1:
+                        snippet = ch.get('text','')[:240]
+                        scored.append({
+                            'title': item['title'],
+                            'snippet': snippet + ('...' if len(ch.get('text',''))>240 else ''),
+                            'similarity': float(sim),
+                            'file': item['file'],
+                            'chunk_index': idx
+                        })
+            elif 'embedding' in item:
+                sim = cosine_similarity(query_embedding, item['embedding'])
+                if sim > 0.1:
+                    scored.append({
+                        'title': item['title'],
+                        'snippet': item['content'][:240] + ('...' if len(item['content'])>240 else ''),
+                        'similarity': float(sim),
+                        'file': item['file'],
+                        'chunk_index': 0
+                    })
+
+        scored.sort(key=lambda x: x['similarity'], reverse=True)
+        total = len(scored)
+        page = scored[offset:offset+limit]
+        payload = {"total": total, "results": page}
+        results_cache[cache_key] = payload
+        return jsonify(payload)
         
     except Exception as e:
         logging.error(f"Search error: {e}")
-        return jsonify([]), 500
+        return jsonify({"total": 0, "results": []}), 500
 
 @app.route('/content/<path:filename>')
 def get_content(filename):
@@ -84,14 +143,27 @@ def get_content(filename):
             # The content already includes proper source information
             
             html_content = markdown.markdown(content_to_display)
+            tags, attrs = allowed_html()
+            html_content = bleach.clean(html_content, tags=tags, attributes=attrs, strip=True)
             return jsonify({
                 'title': item['title'],
                 'content': html_content,
                 'file': filename,
                 'is_url': item.get('is_url', False),
-                'source_url': item.get('source_url')
+                'source_url': item.get('source_url'),
+                'tags': item.get('tags', [])
             })
     return jsonify({'error': 'Content not found'}), 404
+
+@app.after_request
+def set_security_headers(resp):
+    resp.headers['X-Content-Type-Options'] = 'nosniff'
+    resp.headers['X-Frame-Options'] = 'DENY'
+    resp.headers['Referrer-Policy'] = 'no-referrer-when-downgrade'
+    # Minimal CSP allowing Twitter widgets
+    csp = "default-src 'self'; script-src 'self' https://platform.twitter.com; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pbs.twimg.com https://ton.twimg.com; frame-src https://platform.twitter.com;"
+    resp.headers['Content-Security-Policy'] = csp
+    return resp
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

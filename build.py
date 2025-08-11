@@ -7,9 +7,11 @@ import os
 import json
 import logging
 import re
+import hashlib
 from pathlib import Path
 from openai import OpenAI
 import trafilatura
+import yaml
 from urllib.parse import urlparse, quote
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
@@ -83,7 +85,9 @@ def _twitter_oembed(url: str):
 
 
 def create_url_preview(url):
-    """Create URL preview with embed support for Twitter/X, with text for embedding."""
+    """Create URL preview with embed support for Twitter/X, with text for embedding.
+    For regular articles, attempt to fetch and extract main text with trafilatura for embedding quality.
+    """
     try:
         parsed = urlparse(url)
         domain = parsed.netloc.replace('www.', '')
@@ -115,11 +119,20 @@ def create_url_preview(url):
             return preview_title, preview_content, embed_text
 
         # Regular link preview for other URLs
+        fetched = None
+        try:
+            downloaded = trafilatura.fetch_url(url)
+            if downloaded:
+                fetched = trafilatura.extract(downloaded, include_comments=False, include_tables=False)
+        except Exception as fe:
+            logging.info(f"Trafilatura fetch failed, using fallback: {fe}")
+
         preview_title = f"Link: {domain}"
         preview_content = f"# {preview_title}\n\n**URL:** {url}\n\n*Click to visit the original source*"
         logging.info(f"Created preview for: {url}")
-        # For non-Twitter pages, embed the preview text itself
-        return preview_title, preview_content, _strip_html(preview_content)
+        # For non-Twitter pages, prefer fetched article text for embeddings
+        embed_source = fetched if fetched and len(fetched) > 40 else _strip_html(preview_content)
+        return preview_title, preview_content, embed_source
 
     except Exception as e:
         logging.warning(f"Failed to create preview for {url}: {e}")
@@ -140,6 +153,56 @@ def extract_title(content, original_url=None):
             return line.strip()[:50]
     return "Untitled"
 
+def parse_frontmatter_and_body(raw_text: str):
+    """Parse optional YAML frontmatter. Returns (meta: dict, body: str)."""
+    if raw_text.startswith('---'):
+        parts = raw_text.split('\n', 1)[1]
+        if '\n---' in parts:
+            fm_text, body_rest = parts.split('\n---', 1)
+            try:
+                meta = yaml.safe_load(fm_text) or {}
+                # Trim leading newline after end delimiter
+                body = body_rest.lstrip('\n')
+                return meta, body
+            except Exception as e:
+                logging.warning(f"Frontmatter parse error: {e}")
+    return {}, raw_text
+
+
+def chunk_text(text: str, max_chars: int = 1200, overlap: int = 150):
+    """Simple chunking by paragraphs, merging until ~max_chars with overlap."""
+    paragraphs = [p.strip() for p in re.split(r"\n{2,}", text) if p.strip()]
+    chunks = []
+    current = []
+    current_len = 0
+    for p in paragraphs:
+        if current_len + len(p) + 2 <= max_chars or not current:
+            current.append(p)
+            current_len += len(p) + 2
+        else:
+            chunks.append('\n\n'.join(current))
+            # start next with overlap
+            tail = ('\n\n'.join(current))[-overlap:]
+            current = [tail, p]
+            current_len = len(tail) + len(p) + 2
+    if current:
+        chunks.append('\n\n'.join(current))
+    return chunks
+
+
+def average_vectors(vectors):
+    if not vectors:
+        return None
+    # simple element-wise mean
+    n = len(vectors)
+    m = len(vectors[0])
+    summed = [0.0]*m
+    for v in vectors:
+        for i, val in enumerate(v):
+            summed[i] += val
+    return [x/n for x in summed]
+
+
 def process_md_files():
     """Process all .md files in knowledge directory"""
     knowledge_dir = Path('knowledge')
@@ -153,12 +216,23 @@ def process_md_files():
         return []
     
     knowledge_base = []
+
+    # Load existing to support incremental with content hash
+    prev_map = {}
+    try:
+        with open('embeddings.json', 'r', encoding='utf-8') as pf:
+            prev_data = json.load(pf)
+            for entry in prev_data:
+                prev_map[entry.get('file')] = entry
+    except Exception:
+        prev_map = {}
     
     for md_file in md_files:
         logging.info(f"Processing {md_file.name}")
         
         with open(md_file, 'r', encoding='utf-8') as f:
-            content = f.read().strip()
+            raw_text = f.read().strip()
+        meta, content = parse_frontmatter_and_body(raw_text)
         
         if not content:
             logging.warning(f"Skipping empty file: {md_file.name}")
@@ -167,6 +241,9 @@ def process_md_files():
         original_content = content
         web_title = None
         is_url = False
+        tags = meta.get('tags', []) if isinstance(meta, dict) else []
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.split(',') if t.strip()]
         
         # Check if content is just a URL
         if is_url_only(content):
@@ -182,15 +259,42 @@ def process_md_files():
             else:
                 logging.warning(f"Could not create preview for {url}, using URL as content")
         
-        # Extract title
-        title = extract_title(content, web_title)
+        # Extract title (frontmatter title overrides)
+        title = meta.get('title') or extract_title(content, web_title)
         
         # Generate embedding
         try:
-            # If URL-only and we built a preview, use extracted text for embeddings
-            text_for_embedding = preview_text if is_url and 'preview_text' in locals() and preview_text else content
-            embedding = get_embedding(text_for_embedding)
-            
+            base_text_for_embedding = preview_text if is_url and 'preview_text' in locals() and preview_text else content
+            content_hash = hashlib.sha256(base_text_for_embedding.encode('utf-8')).hexdigest()
+
+            prev = prev_map.get(md_file.name)
+            if prev and prev.get('content_hash') == content_hash:
+                # Reuse previous entry as-is (fast path)
+                prev['title'] = title
+                prev['content'] = content
+                prev['original_content'] = original_content
+                prev['is_url'] = is_url
+                prev['source_url'] = url if is_url else None
+                prev['tags'] = tags
+                knowledge_base.append(prev)
+                logging.info(f"✓ Unchanged {md_file.name}, reused embeddings")
+                continue
+
+            # Chunking
+            text_chunks = chunk_text(base_text_for_embedding)
+            chunk_embeddings = []
+            chunk_objs = []
+            for ch in text_chunks:
+                emb = get_embedding(ch)
+                chunk_embeddings.append(emb)
+                chunk_objs.append({
+                    'text': ch,
+                    'embedding': emb
+                })
+
+            # Document-level embedding as average of chunks
+            doc_embedding = average_vectors(chunk_embeddings) if chunk_embeddings else get_embedding(base_text_for_embedding)
+
             knowledge_base.append({
                 'file': md_file.name,
                 'title': title,
@@ -198,7 +302,10 @@ def process_md_files():
                 'original_content': original_content,
                 'is_url': is_url,
                 'source_url': url if is_url else None,
-                'embedding': embedding
+                'tags': tags,
+                'chunks': chunk_objs,
+                'embedding': doc_embedding,
+                'content_hash': content_hash
             })
             
             logging.info(f"✓ Processed {md_file.name}: {title}")
