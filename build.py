@@ -34,27 +34,22 @@ def is_url_only(content):
         return re.match(url_pattern, lines[0]) is not None
     return False
 
-def fetch_web_content(url):
-    """Fetch and extract content from a URL"""
+def create_url_preview(url):
+    """Create a simple URL preview without fetching full content"""
     try:
-        logging.info(f"Fetching content from: {url}")
-        downloaded = trafilatura.fetch_url(url)
-        if downloaded:
-            content = trafilatura.extract(downloaded, include_comments=False, include_tables=False)
-            title = trafilatura.extract(downloaded, include_comments=False, include_tables=False, output_format='xml')
-            if title:
-                # Extract title from XML metadata
-                title_match = re.search(r'<title[^>]*>(.*?)</title>', title)
-                if title_match:
-                    title = title_match.group(1).strip()
-                else:
-                    title = content.split('\n')[0][:100] if content else url
-            else:
-                title = url
-            return title, content
-        return None, None
+        # Extract domain for basic preview
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        domain = parsed.netloc.replace('www.', '')
+        
+        # Create simple preview content
+        preview_title = f"Link: {domain}"
+        preview_content = f"# {preview_title}\n\n**URL:** {url}\n\n*Click to visit the original source*"
+        
+        logging.info(f"Created preview for: {url}")
+        return preview_title, preview_content
     except Exception as e:
-        logging.warning(f"Failed to fetch content from {url}: {e}")
+        logging.warning(f"Failed to create preview for {url}: {e}")
         return None, None
 
 def extract_title(content, original_url=None):
@@ -104,13 +99,13 @@ def process_md_files():
         if is_url_only(content):
             is_url = True
             url = content.strip()
-            web_title, web_content = fetch_web_content(url)
-            if web_content:
-                # Use web content for embedding but keep original URL
-                content = f"# {web_title}\n\nSource: {url}\n\n{web_content}"
-                logging.info(f"Fetched web content for {url}")
+            web_title, preview_content = create_url_preview(url)
+            if preview_content:
+                # Use preview content for embedding
+                content = preview_content
+                logging.info(f"Created preview for {url}")
             else:
-                logging.warning(f"Could not fetch content for {url}, using URL as content")
+                logging.warning(f"Could not create preview for {url}, using URL as content")
         
         # Extract title
         title = extract_title(content, web_title)

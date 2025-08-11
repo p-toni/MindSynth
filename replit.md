@@ -40,8 +40,8 @@ Preferred communication style: Simple, everyday language.
 - **Static Embedding Cache**: Pre-computed embeddings stored in JSON format for fast retrieval
 - **Build System**: Separate build process to regenerate embeddings when content changes
 - **Automatic Content Discovery**: Scans directory for markdown files during build process
-- **URL Content Fetching**: Automatically detects when .md files contain only URLs and fetches web content using Trafilatura
-- **Smart Content Processing**: Web articles are automatically scraped, titled, and embedded while preserving source attribution
+- **URL Preview System**: Automatically detects when .md files contain only URLs and creates lightweight previews without full content fetching
+- **Smart URL Processing**: URLs are converted to searchable preview entries showing domain and source link
 
 # External Dependencies
 
