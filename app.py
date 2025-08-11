@@ -80,12 +80,8 @@ def get_content(filename):
         if item['file'] == filename:
             content_to_display = item['content']
             
-            # If it's a URL-based file, format it nicely
-            if item.get('is_url', False):
-                source_url = item.get('source_url')
-                if source_url:
-                    # Add a source link at the top
-                    content_to_display = f"**Source:** [{source_url}]({source_url})\n\n---\n\n{content_to_display}"
+            # For URL-based files, use the content directly without extra formatting
+            # The content already includes proper source information
             
             html_content = markdown.markdown(content_to_display)
             return jsonify({
