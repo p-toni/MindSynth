@@ -17,7 +17,7 @@ footer p{margin-bottom:16px;font-size:0.9em}
 .dots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(24px,1fr));gap:12px;padding:40px 0;max-width:520px;margin:0 auto;position:relative;transition:all 0.4s cubic-bezier(0.4,0,0.2,1)}
 .dot{border-radius:50%;background:#333;cursor:pointer;position:relative;transition:transform 0.2s ease;overflow:visible}
 .dot:hover{transform:scale(1.3)}
-.dot-tooltip{position:fixed;background:#fff;color:#333;padding:16px;font-size:12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);opacity:0;pointer-events:none;z-index:9999;width:280px;border:1px solid #e0e0e0;transition:opacity 0.2s ease;transform:translate(-50%,-100%);margin-top:-10px}
+.dot-tooltip{position:fixed;background:#fff;color:#333;padding:16px;font-size:12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);opacity:0;pointer-events:none;z-index:9999;width:280px;border:1px solid #e0e0e0;transition:opacity 0.2s ease;transform:translate(-50%,-100%);margin-top:-10px;max-width:min(90vw,320px)}
 .dot:hover .dot-tooltip{opacity:1}
 .tooltip-title{font-weight:600;margin-bottom:8px;color:#1a1a1a;font-size:13px;line-height:1.3}
 .tooltip-summary{color:#555;margin-bottom:12px;line-height:1.4;font-size:11px}
