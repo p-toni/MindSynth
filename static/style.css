@@ -7,11 +7,13 @@ header p{color:#777;font-size:0.9em;font-style:italic}
 #searchInput:focus{border-bottom-color:#888}#searchInput::placeholder{color:#aaa;font-style:italic}
 .search-status{position:absolute;right:0;bottom:8px;color:#999;font-size:12px;font-style:italic}
 .results{min-height:400px}
-.welcome{text-align:center;padding:60px 40px;color:#555}
-.welcome h3{margin-bottom:20px;color:#333;font-size:1.4em;font-weight:normal;font-style:italic}
-.features{display:flex;justify-content:center;gap:40px;margin-top:24px;flex-wrap:wrap}
-.feature{color:#777;font-size:13px;letter-spacing:0.02em;border-bottom:1px solid transparent}
+footer{position:fixed;bottom:0;left:0;right:0;background:#fafafa;border-top:1px solid #eee;padding:20px 0;text-align:center;color:#555}
+footer h3{margin-bottom:12px;color:#333;font-size:1.2em;font-weight:normal;font-style:italic}
+footer p{margin-bottom:16px;font-size:0.9em}
+.features{display:flex;justify-content:center;gap:30px;flex-wrap:wrap}
+.feature{color:#777;font-size:12px;letter-spacing:0.02em;border-bottom:1px solid transparent}
 .feature:hover{color:#444;border-bottom-color:#ddd}
+body{padding-bottom:120px}
 .dots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(20px,1fr));gap:12px;padding:40px 0;max-width:500px;margin:0 auto}
 .dot{width:16px;height:16px;border-radius:50%;background:#333;cursor:pointer;position:relative}
 .dot:hover{background:#555;transform:scale(1.2)}
