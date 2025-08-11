@@ -9,10 +9,23 @@ class KnowledgeSearch {
         this.closePanel = document.getElementById('closePanel');
         this.searchTimeout = null;
         this.previousActiveElement = null;
+        
+        console.log('KnowledgeSearch constructor - elements found:', {
+            searchInput: !!this.searchInput,
+            results: !!this.results,
+            status: !!this.status,
+            panel: !!this.panel,
+            panelTitle: !!this.panelTitle,
+            panelContent: !!this.panelContent,
+            closePanel: !!this.closePanel
+        });
+        
         this.init();
     }
 
     init() {
+        console.log('Initializing KnowledgeSearch...');
+        
         this.searchInput.addEventListener('input', () => this.handleSearch());
         this.closePanel.addEventListener('click', () => this.hidePanel());
         
@@ -40,6 +53,8 @@ class KnowledgeSearch {
                 }
             }
         });
+        
+        console.log('KnowledgeSearch initialized');
     }
 
     handleSearch() {
@@ -70,6 +85,8 @@ class KnowledgeSearch {
     }
 
     displayResults(results, query, total) {
+        console.log('Displaying results:', results.length, 'total:', total);
+        
         if (!results.length) {
             this.results.innerHTML = `
                 <div class="no-results">
@@ -112,6 +129,8 @@ class KnowledgeSearch {
         if (btn) {
             btn.addEventListener('click', () => alert('Pagination UI placeholder'));
         }
+        
+        console.log('Results displayed, dots created:', document.querySelectorAll('.dot').length);
     }
 
     showWelcome() {
@@ -119,9 +138,12 @@ class KnowledgeSearch {
     }
 
     async showContent(filename) {
+        console.log('showContent called with filename:', filename);
         try {
             const response = await fetch(`/content/${encodeURIComponent(filename)}`);
             const data = await response.json();
+            
+            console.log('Content response:', data);
             
             if (data.error) {
                 alert('Content not found');
@@ -139,13 +161,18 @@ class KnowledgeSearch {
     }
 
     showPanel() {
+        console.log('showPanel called');
         this.previousActiveElement = document.activeElement;
         this.panel.classList.add('active');
         document.getElementById('idleTexture').style.display = 'none';
         this.panel.focus();
+        console.log('Panel classes after show:', this.panel.className);
+        console.log('Panel visibility:', getComputedStyle(this.panel).visibility);
+        console.log('Panel opacity:', getComputedStyle(this.panel).opacity);
     }
 
     hidePanel() {
+        console.log('hidePanel called');
         this.panel.classList.remove('active');
         document.getElementById('idleTexture').style.display = 'flex';
         
@@ -318,4 +345,6 @@ class KnowledgeSearch {
     }
 }
 
+console.log('Creating KnowledgeSearch instance...');
 const knowledgeSearch = new KnowledgeSearch();
+console.log('KnowledgeSearch instance created:', knowledgeSearch);
