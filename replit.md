@@ -5,22 +5,14 @@ This is a personal knowledge base application that provides semantic search func
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
-Design philosophy: "things should be subtle, aesthetic comes from taste" - values restraint over obvious effects.
-Animation preferences: All animations removed for cleaner, more static interface following minimal design approach.
-Visual preferences: Clean minimalism with purposeful design choices, avoid excessive patterns or grids.
-Circuit board aesthetics: Prefers authentic PCB patterns over simple grids - referenced CodePen examples for realistic trace routing and component placement.
-Color scheme: Clean modern design with light gray background, white cards, and blue (#3498db) accents.
-Layout: Card-based design inspired by design portfolios but adapted for knowledge management purpose.
 
 # System Architecture
 
 ## Frontend Architecture
-- **Card-Based Layout**: Modern portfolio-inspired grid design with distinct functional areas
+- **Single Page Application**: Uses vanilla JavaScript with a minimal, responsive design
 - **Modal System**: Content is displayed in overlays for better user experience
 - **Real-time Search**: Implements debounced search with instant results as users type
-- **Keyboard Navigation**: Full arrow key navigation with Enter to select, Escape to close
-- **Search State Persistence**: Maintains query state in URL without complex routing
-- **Responsive Design**: CSS Grid layout that adapts from 3-column to single-column on mobile
+- **Responsive Design**: Mobile-first approach with CSS Grid/Flexbox for layout
 
 ## Backend Architecture
 - **Flask Web Framework**: Lightweight Python web server for handling HTTP requests
@@ -36,16 +28,14 @@ Layout: Card-based design inspired by design portfolios but adapted for knowledg
 
 ## Search Engine
 - **Vector-based Search**: Converts user queries to embeddings and finds similar document embeddings
-- **Enhanced Ranking**: Composite scoring with similarity * (1 + length_bonus + recency_bonus)
 - **Semantic Understanding**: Goes beyond keyword matching to understand meaning and context
 - **Real-time Query Processing**: Generates embeddings on-demand for user queries
-- **Relevance Scoring**: Uses enhanced cosine similarity with document metadata weighting
+- **Relevance Scoring**: Uses cosine similarity scores to rank search results
 
 ## Content Management
 - **File-based Storage**: Markdown files stored in a dedicated `knowledge/` directory
-- **Smart Embedding Cache**: Pre-computed embeddings with file modification timestamps
-- **Incremental Updates**: Build system only regenerates embeddings for changed files
-- **Build System**: Separate build process with intelligent cache invalidation
+- **Static Embedding Cache**: Pre-computed embeddings stored in JSON format for fast retrieval
+- **Build System**: Separate build process to regenerate embeddings when content changes
 - **Automatic Content Discovery**: Scans directory for markdown files during build process
 
 # External Dependencies

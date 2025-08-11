@@ -53,26 +53,20 @@ def search():
         # Get query embedding
         query_embedding = get_embedding(query)
         
-        # Calculate similarities with enhanced ranking
+        # Calculate similarities
         results = []
         for item in knowledge_base:
             similarity = cosine_similarity(query_embedding, item['embedding'])
             if similarity > 0.1:  # Lower threshold for more results
-                # Enhanced ranking: similarity * (1 + length_bonus + recency_bonus)
-                length_bonus = min(0.1, len(item['content']) / 10000)  # Slight bonus for longer docs
-                recency_bonus = item.get('modified', 0) / 1000000000  # Timestamp-based recency
-                composite_score = similarity * (1 + length_bonus + recency_bonus)
-                
                 results.append({
                     'title': item['title'],
                     'content': item['content'][:300] + ('...' if len(item['content']) > 300 else ''),
                     'similarity': float(similarity),
-                    'score': float(composite_score),
                     'file': item['file']
                 })
         
-        # Sort by composite score and return top 5
-        results.sort(key=lambda x: x['score'], reverse=True)
+        # Sort by similarity and return top 5
+        results.sort(key=lambda x: x['similarity'], reverse=True)
         return jsonify(results[:5])
         
     except Exception as e:

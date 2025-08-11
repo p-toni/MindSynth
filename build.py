@@ -67,15 +67,11 @@ def process_md_files():
         try:
             embedding = get_embedding(content)
             
-            # Get file modification timestamp
-            modified_time = int(md_file.stat().st_mtime)
-            
             knowledge_base.append({
                 'file': md_file.name,
                 'title': title,
                 'content': content,
-                'embedding': embedding,
-                'modified': modified_time
+                'embedding': embedding
             })
             
             logging.info(f"✓ Processed {md_file.name}: {title}")
@@ -85,32 +81,8 @@ def process_md_files():
     
     return knowledge_base
 
-def should_rebuild():
-    """Check if rebuild is needed based on file timestamps"""
-    if not os.path.exists('embeddings.json'):
-        return True
-    
-    try:
-        with open('embeddings.json', 'r', encoding='utf-8') as f:
-            existing = json.load(f)
-            existing_files = {item['file']: item.get('modified', 0) for item in existing}
-    except:
-        return True
-    
-    knowledge_dir = Path('knowledge')
-    for md_file in knowledge_dir.glob('*.md'):
-        current_modified = int(md_file.stat().st_mtime)
-        if md_file.name not in existing_files or current_modified > existing_files[md_file.name]:
-            return True
-    
-    return False
-
 def main():
-    """Main build function with incremental updates"""
-    if not should_rebuild():
-        logging.info("No changes detected, embeddings up to date")
-        return
-        
+    """Main build function"""
     logging.info("Starting knowledge base build...")
     
     # Process markdown files
