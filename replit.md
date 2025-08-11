@@ -1,6 +1,6 @@
 # Overview
 
-This is a personal knowledge base application that provides semantic search functionality over markdown documents. The system allows users to store their knowledge in markdown files and search through them using AI-powered semantic search rather than simple keyword matching. The application is designed to be ultra-lightweight (under 14kB) while providing powerful search capabilities through OpenAI's embedding models.
+This is a personal knowledge base application that provides semantic search functionality over markdown documents with an innovative dot-based visualization system. Users store knowledge in markdown files and search through them using AI-powered semantic search with rich hover previews. The application maintains an ultra-lightweight footprint (14.1kB) while delivering powerful search capabilities through OpenAI's embedding models and an elegant "wall of dots" interface where dot size represents semantic relevance.
 
 # User Preferences
 
@@ -10,9 +10,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend Architecture
 - **Single Page Application**: Uses vanilla JavaScript with a minimal, responsive design
-- **Modal System**: Content is displayed in overlays for better user experience
-- **Real-time Search**: Implements debounced search with instant results as users type
-- **Responsive Design**: Mobile-first approach with CSS Grid/Flexbox for layout
+- **Dot Visualization System**: Documents represented as variable-sized dots (8px-24px) based on semantic relevance
+- **Rich Hover Tooltips**: Dynamic JavaScript-generated preview cards with title, summary, match percentage, and tags
+- **Modal System**: Full content displayed in overlays for detailed reading
+- **Real-time Search**: Implements debounced search with instant visual feedback
+- **Responsive Design**: Mobile-first approach with CSS Grid/Flexbox layout and adaptive tooltip sizing
 
 ## Backend Architecture
 - **Flask Web Framework**: Lightweight Python web server for handling HTTP requests
@@ -30,7 +32,8 @@ Preferred communication style: Simple, everyday language.
 - **Vector-based Search**: Converts user queries to embeddings and finds similar document embeddings
 - **Semantic Understanding**: Goes beyond keyword matching to understand meaning and context
 - **Real-time Query Processing**: Generates embeddings on-demand for user queries
-- **Relevance Scoring**: Uses cosine similarity scores to rank search results
+- **Visual Relevance Indicators**: Dot size and color intensity represent cosine similarity scores
+- **Rich Preview System**: Hover tooltips show detailed information without requiring clicks
 
 ## Content Management
 - **File-based Storage**: Markdown files stored in a dedicated `knowledge/` directory
