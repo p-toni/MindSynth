@@ -108,7 +108,8 @@ def search():
                             'snippet': snippet + ('...' if len(ch.get('text',''))>240 else ''),
                             'similarity': float(sim),
                             'file': item['file'],
-                            'chunk_index': idx
+                            'chunk_index': idx,
+                            'tags': item.get('tags', [])
                         })
             elif 'embedding' in item:
                 sim = cosine_similarity(query_embedding, item['embedding'])
@@ -118,7 +119,8 @@ def search():
                         'snippet': item['content'][:240] + ('...' if len(item['content'])>240 else ''),
                         'similarity': float(sim),
                         'file': item['file'],
-                        'chunk_index': 0
+                        'chunk_index': 0,
+                        'tags': item.get('tags', [])
                     })
 
         scored.sort(key=lambda x: x['similarity'], reverse=True)
