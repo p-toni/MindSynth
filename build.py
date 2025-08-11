@@ -49,8 +49,8 @@ def create_url_preview(url):
             # Use data attribute to identify twitter embeds
             preview_content = f"""# {preview_title}
 
-<div class="twitter-embed-container" data-tweet-url="{url}">
-    <blockquote class="twitter-tweet">
+<div class="twitter-embed-container">
+    <blockquote class="twitter-tweet" data-dnt="true" data-theme="light">
         <a href="{url}">View Tweet</a>
     </blockquote>
 </div>
