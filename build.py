@@ -46,13 +46,14 @@ def create_url_preview(url):
             # Extract tweet ID for embed
             tweet_id = url.split('/')[-1].split('?')[0]
             preview_title = f"Tweet Preview"
-            # Use proper Twitter embed structure from publish.twitter.com
+            # Use data attribute to identify twitter embeds
             preview_content = f"""# {preview_title}
 
-<blockquote class="twitter-tweet">
-    <a href="{url}">View Tweet</a>
-</blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<div class="twitter-embed-container" data-tweet-url="{url}">
+    <blockquote class="twitter-tweet">
+        <a href="{url}">View Tweet</a>
+    </blockquote>
+</div>
 
 **Source:** [{url}]({url})"""
         else:
