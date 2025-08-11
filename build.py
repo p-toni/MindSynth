@@ -48,12 +48,9 @@ def create_url_preview(url):
             preview_title = f"Tweet Preview"
             preview_content = f"""# {preview_title}
 
-<div class="tweet-embed" data-tweet-id="{tweet_id}" data-url="{url}">
-    <blockquote class="twitter-tweet">
-        <a href="{url}">View Tweet</a>
-    </blockquote>
-    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-</div>
+<blockquote class="twitter-tweet" data-theme="light">
+    <a href="{url}">View Tweet</a>
+</blockquote>
 
 **Source:** [{url}]({url})"""
         else:

@@ -39,8 +39,7 @@ footer p{margin-bottom:16px;font-size:0.9em}
 .panel-body code{background:#f5f5f5;padding:3px 6px;color:#666;font-family:monospace;border-radius:3px}
 .panel-body a{color:#0066cc;text-decoration:none;border-bottom:1px solid transparent;transition:border-bottom-color 0.2s ease}
 .panel-body a:hover{border-bottom-color:#0066cc}
-.tweet-embed{margin:20px 0;padding:0}
-.twitter-tweet{margin:20px auto!important}
+.twitter-tweet{margin:20px auto!important;max-width:550px}
 @media(max-width:768px){.container{width:100vw;padding:40px 20px}.content-panel{width:100vw}.features{flex-direction:column;align-items:center;gap:20px}h1{font-size:1.8em}.dots-grid{grid-template-columns:repeat(auto-fill,minmax(20px,1fr));gap:8px}footer{width:100vw;padding:15px 0;text-align:center}footer h3{font-size:1.1em}footer p{font-size:0.85em}.dot-tooltip{width:240px}}
 .idle-texture{position:fixed;top:0;right:0;width:50vw;height:100vh;background:linear-gradient(135deg,#2a2a2a 0%,#1e1e1e 25%,#2a2a2a 50%,#1a1a1a 75%,#2a2a2a 100%),radial-gradient(circle at 25% 25%,rgba(255,255,255,0.02) 0%,transparent 50%),radial-gradient(circle at 75% 75%,rgba(255,255,255,0.01) 0%,transparent 50%);z-index:999;border-left:1px solid #333;display:flex;align-items:center;justify-content:center;color:#666;font-style:italic;font-size:1.1em}
 @media(max-width:768px){.idle-texture{width:100vw}}
