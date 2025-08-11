@@ -47,12 +47,26 @@ def create_url_preview(url):
             tweet_id = url.split('/')[-1].split('?')[0]
             preview_title = f"Tweet Preview"
             # Use data attribute to identify twitter embeds
+            # Extract tweet info for a custom card
+            tweet_id = url.split('/')[-1].split('?')[0]
+            username = url.split('/')[-3]
             preview_content = f"""# {preview_title}
 
-<div class="twitter-embed-container">
-    <blockquote class="twitter-tweet" data-dnt="true" data-theme="light">
-        <a href="{url}">View Tweet</a>
-    </blockquote>
+<div class="tweet-card">
+    <div class="tweet-header">
+        <div class="tweet-avatar">🐦</div>
+        <div class="tweet-user">
+            <div class="tweet-name">@{username}</div>
+            <div class="tweet-handle">Twitter</div>
+        </div>
+        <div class="tweet-logo">𝕏</div>
+    </div>
+    <div class="tweet-content">
+        <p>View this tweet on X (formerly Twitter)</p>
+    </div>
+    <div class="tweet-footer">
+        <a href="{url}" target="_blank" class="tweet-link">View Tweet →</a>
+    </div>
 </div>
 
 **Source:** [{url}]({url})"""

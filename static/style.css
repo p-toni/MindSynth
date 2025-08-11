@@ -39,8 +39,17 @@ footer p{margin-bottom:16px;font-size:0.9em}
 .panel-body code{background:#f5f5f5;padding:3px 6px;color:#666;font-family:monospace;border-radius:3px}
 .panel-body a{color:#0066cc;text-decoration:none;border-bottom:1px solid transparent;transition:border-bottom-color 0.2s ease}
 .panel-body a:hover{border-bottom-color:#0066cc}
-.twitter-embed-container{margin:20px 0;text-align:center}
-.twitter-tweet{margin:20px auto!important;max-width:550px}
+.tweet-card{background:#fff;border:1px solid #e1e8ed;border-radius:12px;margin:20px 0;max-width:500px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.tweet-header{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #f7f9fa}
+.tweet-avatar{width:40px;height:40px;border-radius:50%;background:#1da1f2;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;margin-right:12px}
+.tweet-user{flex:1}
+.tweet-name{font-weight:700;color:#14171a;font-size:14px}
+.tweet-handle{color:#657786;font-size:14px}
+.tweet-logo{color:#1da1f2;font-size:20px;font-weight:bold}
+.tweet-content{padding:12px 16px;color:#14171a;line-height:1.4}
+.tweet-footer{padding:12px 16px;border-top:1px solid #f7f9fa}
+.tweet-link{color:#1da1f2;text-decoration:none;font-weight:500;transition:color 0.2s ease}
+.tweet-link:hover{color:#1991db;text-decoration:underline}
 @media(max-width:768px){.container{width:100vw;padding:40px 20px}.content-panel{width:100vw}.features{flex-direction:column;align-items:center;gap:20px}h1{font-size:1.8em}.dots-grid{grid-template-columns:repeat(auto-fill,minmax(20px,1fr));gap:8px}footer{width:100vw;padding:15px 0;text-align:center}footer h3{font-size:1.1em}footer p{font-size:0.85em}.dot-tooltip{width:240px}}
 .idle-texture{position:fixed;top:0;right:0;width:50vw;height:100vh;background:linear-gradient(135deg,#2a2a2a 0%,#1e1e1e 25%,#2a2a2a 50%,#1a1a1a 75%,#2a2a2a 100%),radial-gradient(circle at 25% 25%,rgba(255,255,255,0.02) 0%,transparent 50%),radial-gradient(circle at 75% 75%,rgba(255,255,255,0.01) 0%,transparent 50%);z-index:999;border-left:1px solid #333;display:flex;align-items:center;justify-content:center;color:#666;font-style:italic;font-size:1.1em}
 @media(max-width:768px){.idle-texture{width:100vw}}
