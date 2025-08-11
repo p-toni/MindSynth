@@ -109,8 +109,8 @@ class KnowledgeSearch {
                              role="button" 
                              tabindex="0" 
                              aria-label="Open ${this.escapeHtml(result.title)} (${matchPercent}% match)"
-                             onclick="knowledgeSearch.showContent('${result.file}')"
-                             onkeydown="if(event.key==='Enter'||event.key===' '){knowledgeSearch.showContent('${result.file}')}"
+                             data-filename="${result.file}"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.target.click()}"
                              style="width:${size}px;height:${size}px;background:hsl(${Math.round(result.similarity * 120)}, 30%, ${20 + result.similarity * 40}%)"
                              data-tooltip-content='{"title":"${this.escapeHtml(result.title)}","summary":"${summary}","match":"${matchPercent}","tags":${JSON.stringify(tags)}}'>
                         </div>`;
@@ -124,6 +124,7 @@ class KnowledgeSearch {
 
         this.results.innerHTML = html + more;
         this.addTooltipListeners();
+        this.addDotClickListeners();
         
         const btn = document.getElementById('showMore');
         if (btn) {
@@ -342,6 +343,16 @@ class KnowledgeSearch {
                 }
             }
         }, 400);
+    }
+
+    addDotClickListeners() {
+        document.querySelectorAll('.dot').forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                const filename = e.target.getAttribute('data-filename');
+                console.log('Dot clicked, filename:', filename);
+                this.showContent(filename);
+            });
+        });
     }
 }
 
