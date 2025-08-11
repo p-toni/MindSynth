@@ -12,4 +12,5 @@ dependencies = [
     "numpy>=2.3.2",
     "openai>=1.99.6",
     "psycopg2-binary>=2.9.10",
+    "trafilatura>=2.0.0",
 ]

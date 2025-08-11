@@ -78,11 +78,22 @@ def get_content(filename):
     """Get full content of a knowledge file"""
     for item in knowledge_base:
         if item['file'] == filename:
-            html_content = markdown.markdown(item['content'])
+            content_to_display = item['content']
+            
+            # If it's a URL-based file, format it nicely
+            if item.get('is_url', False):
+                source_url = item.get('source_url')
+                if source_url:
+                    # Add a source link at the top
+                    content_to_display = f"**Source:** [{source_url}]({source_url})\n\n---\n\n{content_to_display}"
+            
+            html_content = markdown.markdown(content_to_display)
             return jsonify({
                 'title': item['title'],
                 'content': html_content,
-                'file': filename
+                'file': filename,
+                'is_url': item.get('is_url', False),
+                'source_url': item.get('source_url')
             })
     return jsonify({'error': 'Content not found'}), 404
 

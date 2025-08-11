@@ -6,8 +6,10 @@ Run this script to update the knowledge base when adding new .md files
 import os
 import json
 import logging
+import re
 from pathlib import Path
 from openai import OpenAI
+import trafilatura
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -24,8 +26,42 @@ def get_embedding(text):
     )
     return response.data[0].embedding
 
-def extract_title(content):
-    """Extract title from markdown content"""
+def is_url_only(content):
+    """Check if content is just a URL"""
+    lines = [line.strip() for line in content.strip().split('\n') if line.strip()]
+    if len(lines) == 1:
+        url_pattern = r'^https?://[^\s]+$'
+        return re.match(url_pattern, lines[0]) is not None
+    return False
+
+def fetch_web_content(url):
+    """Fetch and extract content from a URL"""
+    try:
+        logging.info(f"Fetching content from: {url}")
+        downloaded = trafilatura.fetch_url(url)
+        if downloaded:
+            content = trafilatura.extract(downloaded, include_comments=False, include_tables=False)
+            title = trafilatura.extract(downloaded, include_comments=False, include_tables=False, output_format='xml')
+            if title:
+                # Extract title from XML metadata
+                title_match = re.search(r'<title[^>]*>(.*?)</title>', title)
+                if title_match:
+                    title = title_match.group(1).strip()
+                else:
+                    title = content.split('\n')[0][:100] if content else url
+            else:
+                title = url
+            return title, content
+        return None, None
+    except Exception as e:
+        logging.warning(f"Failed to fetch content from {url}: {e}")
+        return None, None
+
+def extract_title(content, original_url=None):
+    """Extract title from markdown content or use web title"""
+    if original_url:
+        return original_url
+    
     lines = content.strip().split('\n')
     for line in lines:
         if line.startswith('# '):
@@ -60,8 +96,24 @@ def process_md_files():
             logging.warning(f"Skipping empty file: {md_file.name}")
             continue
         
+        original_content = content
+        web_title = None
+        is_url = False
+        
+        # Check if content is just a URL
+        if is_url_only(content):
+            is_url = True
+            url = content.strip()
+            web_title, web_content = fetch_web_content(url)
+            if web_content:
+                # Use web content for embedding but keep original URL
+                content = f"# {web_title}\n\nSource: {url}\n\n{web_content}"
+                logging.info(f"Fetched web content for {url}")
+            else:
+                logging.warning(f"Could not fetch content for {url}, using URL as content")
+        
         # Extract title
-        title = extract_title(content)
+        title = extract_title(content, web_title)
         
         # Generate embedding
         try:
@@ -71,6 +123,9 @@ def process_md_files():
                 'file': md_file.name,
                 'title': title,
                 'content': content,
+                'original_content': original_content,
+                'is_url': is_url,
+                'source_url': content.strip() if is_url else None,
                 'embedding': embedding
             })
             

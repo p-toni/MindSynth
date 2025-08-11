@@ -40,6 +40,8 @@ Preferred communication style: Simple, everyday language.
 - **Static Embedding Cache**: Pre-computed embeddings stored in JSON format for fast retrieval
 - **Build System**: Separate build process to regenerate embeddings when content changes
 - **Automatic Content Discovery**: Scans directory for markdown files during build process
+- **URL Content Fetching**: Automatically detects when .md files contain only URLs and fetches web content using Trafilatura
+- **Smart Content Processing**: Web articles are automatically scraped, titled, and embedded while preserving source attribution
 
 # External Dependencies
 
@@ -53,6 +55,8 @@ Preferred communication style: Simple, everyday language.
 - **NumPy**: Mathematical operations for vector similarity calculations
 - **Python Markdown**: Rendering markdown content to HTML in modals
 - **Pathlib**: Modern file system operations for content discovery
+- **Trafilatura**: Web content extraction for fetching and processing articles from URLs
+- **Regular Expressions**: URL pattern detection and content parsing
 
 ## Development Dependencies
 - **Logging**: Built-in Python logging for debugging and monitoring
