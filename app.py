@@ -162,8 +162,8 @@ def set_security_headers(resp):
     resp.headers['X-Content-Type-Options'] = 'nosniff'
     resp.headers['X-Frame-Options'] = 'DENY'
     resp.headers['Referrer-Policy'] = 'no-referrer-when-downgrade'
-    # Minimal CSP allowing Twitter widgets
-    csp = "default-src 'self'; script-src 'self' https://platform.twitter.com; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://pbs.twimg.com https://ton.twimg.com; frame-src https://platform.twitter.com;"
+    # CSP allowing Twitter widgets to work properly
+    csp = "default-src 'self'; script-src 'self' 'unsafe-inline' https://platform.twitter.com https://cdn.syndication.twimg.com; connect-src 'self' https://platform.twitter.com; style-src 'self' 'unsafe-inline' https://platform.twitter.com; img-src 'self' data: https://pbs.twimg.com https://ton.twimg.com https://platform.twitter.com; frame-src https://platform.twitter.com https://syndication.twitter.com; font-src 'self' https://platform.twitter.com;"
     resp.headers['Content-Security-Policy'] = csp
     return resp
 

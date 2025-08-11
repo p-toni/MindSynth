@@ -305,44 +305,73 @@ class KnowledgeSearch {
     }
 
     loadTwitterWidgets() {
+        console.log('loadTwitterWidgets called');
         setTimeout(() => {
             const twitterContainers = this.panelContent.querySelectorAll('.twitter-embed-container');
             if (twitterContainers.length > 0) {
                 console.log('Found Twitter containers:', twitterContainers.length);
                 console.log('Container HTML:', twitterContainers[0].innerHTML);
-                console.log('Window twttr:', typeof window.twttr);
                 
-                if (window.twttr) {
-                    console.log('twttr ready:', typeof window.twttr.ready);
-                    console.log('twttr widgets:', typeof window.twttr.widgets);
-                    
-                    if (window.twttr.widgets) {
-                        console.log('Calling twttr.widgets.load...');
-                        try {
-                            window.twttr.widgets.load(this.panelContent)
-                                .then(() => {
-                                    console.log('Twitter widgets loaded successfully');
-                                })
-                                .catch(e => {
-                                    console.error('Twitter widget load error:', e);
-                                });
-                        } catch (e) {
-                            console.error('Twitter widget call error:', e);
-                        }
-                    } else if (window.twttr.ready) {
-                        console.log('Twitter script loading, waiting for ready...');
-                        window.twttr.ready(() => {
-                            if (window.twttr.widgets) {
-                                window.twttr.widgets.load(this.panelContent);
-                            }
-                        });
+                // Check if Twitter script is available
+                if (typeof window.twttr === 'undefined') {
+                    console.log('Twitter script not loaded, attempting to load...');
+                    this.loadTwitterScript();
+                    return;
+                }
+                
+                console.log('Window twttr:', typeof window.twttr);
+                console.log('twttr ready:', typeof window.twttr.ready);
+                console.log('twttr widgets:', typeof window.twttr.widgets);
+                
+                if (window.twttr.widgets) {
+                    console.log('Calling twttr.widgets.load...');
+                    try {
+                        window.twttr.widgets.load(this.panelContent)
+                            .then(() => {
+                                console.log('Twitter widgets loaded successfully');
+                            })
+                            .catch(e => {
+                                console.error('Twitter widget load error:', e);
+                            });
+                    } catch (e) {
+                        console.error('Twitter widget call error:', e);
                     }
+                } else if (window.twttr.ready) {
+                    console.log('Twitter script loading, waiting for ready...');
+                    window.twttr.ready(() => {
+                        if (window.twttr.widgets) {
+                            console.log('Twitter ready, loading widgets...');
+                            window.twttr.widgets.load(this.panelContent);
+                        }
+                    });
                 } else {
-                    console.log('Twitter script not available, retrying...');
-                    setTimeout(() => this.loadTwitterWidgets(), 500);
+                    console.log('Twitter script not ready, retrying...');
+                    setTimeout(() => this.loadTwitterWidgets(), 1000);
                 }
             }
-        }, 400);
+        }, 500);
+    }
+
+    loadTwitterScript() {
+        if (document.getElementById('twitter-wjs')) {
+            console.log('Twitter script already exists, waiting...');
+            setTimeout(() => this.loadTwitterWidgets(), 1000);
+            return;
+        }
+        
+        console.log('Loading Twitter script...');
+        const script = document.createElement('script');
+        script.id = 'twitter-wjs';
+        script.src = 'https://platform.twitter.com/widgets.js';
+        script.async = true;
+        script.onload = () => {
+            console.log('Twitter script loaded, initializing...');
+            setTimeout(() => this.loadTwitterWidgets(), 500);
+        };
+        script.onerror = () => {
+            console.error('Failed to load Twitter script');
+        };
+        document.head.appendChild(script);
     }
 
     addDotClickListeners() {
