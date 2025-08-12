@@ -104,6 +104,9 @@ class KnowledgeSearch {
                     const summary = this.generateSummary(result.title);
                     const tags = this.generateTags(result.title);
                     
+                    // Add staggered delay for natural flow
+                    const delay = results.indexOf(result) * 0.1;
+                    
                     return `
                         <div class="dot" 
                              role="button" 
@@ -111,7 +114,7 @@ class KnowledgeSearch {
                              aria-label="Open ${this.escapeHtml(result.title)} (${matchPercent}% match)"
                              data-filename="${result.file}"
                              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.target.click()}"
-                             style="width:${size}px;height:${size}px;background:hsl(${Math.round(result.similarity * 120)}, 30%, ${20 + result.similarity * 40}%)"
+                             style="width:${size}px;height:${size}px;background:hsl(${Math.round(result.similarity * 120)}, 30%, ${20 + result.similarity * 40}%);animation-delay:${delay}s"
                              data-tooltip-content='{"title":"${this.escapeHtml(result.title)}","summary":"${summary}","match":"${matchPercent}","tags":${JSON.stringify(tags)}}'>
                         </div>`;
                 }).join('')}
