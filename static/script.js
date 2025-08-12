@@ -164,25 +164,20 @@ class KnowledgeSearch {
     showPanel() {
         console.log('showPanel called');
         this.previousActiveElement = document.activeElement;
-        this.panel.classList.add('active');
-        document.getElementById('idleTexture').style.display = 'none';
-        this.panel.focus();
-        console.log('Panel classes after show:', this.panel.className);
-        console.log('Panel visibility:', getComputedStyle(this.panel).visibility);
-        console.log('Panel opacity:', getComputedStyle(this.panel).opacity);
+        this.contentPanel.classList.add('open');
+        this.contentPanel.focus();
+        console.log('Panel should now be visible');
     }
 
     hidePanel() {
         console.log('hidePanel called');
-        this.panel.classList.remove('active');
-        document.getElementById('idleTexture').style.display = 'flex';
-        
+        this.contentPanel.classList.remove('open');
         if (this.previousActiveElement) {
             this.previousActiveElement.focus();
-            this.previousActiveElement = null;
         } else {
             this.searchInput.focus();
         }
+        console.log('Panel should now be hidden');
     }
 
     escapeHtml(text) {
