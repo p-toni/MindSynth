@@ -167,14 +167,14 @@ class KnowledgeSearch {
     showPanel() {
         console.log('showPanel called');
         this.previousActiveElement = document.activeElement;
-        this.contentPanel.classList.add('open');
-        this.contentPanel.focus();
+        this.panel.classList.add('open');
+        this.panel.focus();
         console.log('Panel should now be visible');
     }
 
     hidePanel() {
         console.log('hidePanel called');
-        this.contentPanel.classList.remove('open');
+        this.panel.classList.remove('open');
         if (this.previousActiveElement) {
             this.previousActiveElement.focus();
         } else {
