@@ -3,36 +3,8 @@
 header{text-align:center;margin-bottom:80px}h1{font-size:2.2em;margin-bottom:16px;color:#1a1a1a;font-weight:normal;letter-spacing:0.05em;text-transform:lowercase}h1::first-letter{text-transform:uppercase}
 header p{color:#777;font-size:0.9em;font-style:italic}
 .search-box{position:relative;margin-bottom:60px}
-#searchInput{
-    width:100%;
-    padding:16px 0;
-    font-size:18px;
-    border:0;
-    border-bottom:1px solid #ddd;
-    background:transparent;
-    color:#333;
-    outline:0;
-    font-family:inherit;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    position:relative;
-}
-
-#searchInput:focus{
-    border-bottom-color:#888;
-    border-bottom-width:2px;
-    transform:translateY(-1px);
-    box-shadow:0 4px 12px rgba(0,0,0,0.08);
-}
-
-#searchInput::placeholder{
-    color:#aaa;
-    font-style:italic;
-    transition:color 0.3s ease;
-}
-
-#searchInput:focus::placeholder{
-    color:#ccc;
-}
+#searchInput{width:100%;padding:16px 0;font-size:18px;border:0;border-bottom:1px solid #ddd;background:transparent;color:#333;outline:0;font-family:inherit}
+#searchInput:focus{border-bottom-color:#888}#searchInput::placeholder{color:#aaa;font-style:italic}
 .search-status{position:absolute;right:0;bottom:8px;color:#999;font-size:12px;font-style:italic}
 .results{flex:1;overflow-y:auto;min-height:0}
 footer{position:fixed;bottom:0;left:0;width:50vw;background:#fafafa;border-top:1px solid #eee;padding:20px 0;text-align:center;color:#555}
