@@ -1,6 +1,7 @@
 {
   "name": "mindsynth",
   "version": 2,
+  "comment": "Production deployment ready - toni.ltd",
   "builds": [
     {
       "src": "api/index.py",
