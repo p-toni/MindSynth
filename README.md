@@ -67,13 +67,21 @@ A personal knowledge base application that provides semantic search functionalit
 
 ### Building Knowledge Base
 
-After adding markdown files to `knowledge/`, run:
+The embedding generation is **fully automated**:
 
+1. **Add markdown files** to the `knowledge/` directory
+2. **Create a Pull Request** with your new knowledge
+3. **Merge the PR** - GitHub Actions automatically:
+   - Generates embeddings using OpenAI API
+   - Commits the updated `embeddings.json`
+   - Triggers Vercel deployment
+4. **Your knowledge is instantly searchable** at toni.ltd
+
+#### Manual Build (Optional)
+For local development, you can still build manually:
 ```bash
 python build.py
 ```
-
-This will generate `embeddings.json` with semantic vectors for search.
 
 ### Custom Domain (toni.ltd)
 
