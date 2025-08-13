@@ -39,3 +39,4 @@ server.log
 
 # Generated embeddings (rebuild on deploy)
 # embeddings.json
+.vercel

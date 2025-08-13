@@ -16,6 +16,10 @@ from urllib.parse import urlparse, quote
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 import html as html_lib
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
