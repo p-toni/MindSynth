@@ -1,33 +1,45 @@
 ---
-title: "Thoughts on Artificial Intelligence"
-tags: ["ai", "technology", "future", "philosophy"]
+title: "Thinking With AI"
+tags: ["ai", "human-ai interaction", "systems", "future", "product"]
 ---
 
-# Thoughts on Artificial Intelligence
+# Thinking With AI
 
-AI represents a fundamental shift in how we approach problem-solving and knowledge discovery. It's not just about automation—it's about augmentation of human intelligence.
+AI isn’t just automation. It’s a new substrate for *thinking*—a way to search larger spaces of ideas, faster, with feedback.
+
+## First Principles (Assumptions)
+- **Intelligence = guided search.** We explore a possibility space under constraints (goals, knowledge, compute).
+- **AI shifts the cost curve.** Exploration, iteration, and synthesis become cheaper and faster.
+- **Humans own objectives.** We keep the “why” and standards of quality; AI helps optimize the “how”.
 
 ## The Real Promise
 
-The most exciting aspect of AI isn't replacing human thinking, but enhancing it. Tools like MindSynth demonstrate this perfectly: AI helps us discover connections in our own thoughts we might never have seen.
+The win isn’t replacing human judgment—it’s *amplifying* it. Tools like “MindSynth” show how: by externalizing thought, AI surfaces patterns and contradictions we miss on our own. The result is better questions, tighter feedback loops, and faster learning.
 
-## Key Principles
+## Principles for Building and Using AI
 
-- **Augmentation over Replacement**: AI works best when it amplifies human capabilities
-- **Context Understanding**: Modern AI excels at understanding meaning, not just matching keywords  
-- **Pattern Recognition**: AI can spot relationships across vast amounts of information
-- **Personalization**: AI adapts to individual thinking patterns and preferences
+- **Augmentation > Replacement.** Keep humans as goal-setters and editors; let AI propose, draft, and test.
+- **Context over keywords.** Modern models operate on meaning—feed them rich context, not just prompts.
+- **Pattern + Counter-pattern.** Use AI to find relationships *and* edge cases that break your current model.
+- **Personalization matters.** Adapt to an individual’s concepts, vocabulary, and decision criteria.
+- **Tight, observable loops.** Prefer workflows with traces: inputs → steps → outputs you can inspect and improve.
+- **Deterministic where it counts.** Use stochastic generation to explore; snap to deterministic checks for decisions.
 
 ## The Future of Knowledge Work
 
-We're moving toward a world where:
-- Information retrieval becomes effortless
-- Ideas connect across traditional boundaries
-- Creative insights emerge from unexpected combinations
-- Knowledge workers focus on synthesis rather than search
+We’re moving toward work where:
+- Retrieval is ambient and proactive, not a separate task.
+- Ideas connect across silos by default (text, data, code, media).
+- Creative insight comes from recombining fragments, then testing them quickly.
+- The scarce skill is **synthesis and judgment**, not search.
+
+**What changes in practice**
+- From “write it perfectly” → “generate, constrain, iterate.”
+- From “single artifact” → “systems of drafts with evaluators.”
+- From “expert intuition only” → “expert + instrumented experiments.”
 
 ## Reflection
 
-*"The question isn't whether AI will change how we think, but how we'll choose to think with AI."*
+> *The question isn’t whether AI changes how we think, but how deliberately we choose to think **with** it.*
 
-The real magic happens when human curiosity meets machine capability in tools designed for discovery.
+The magic is the partnership: human curiosity and standards, machine breadth and speed—wired into tools designed for discovery and responsible action.
