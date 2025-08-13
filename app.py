@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from flask import Flask, render_template, request, jsonify
-import numpy as np
+import math
 from openai import OpenAI
 import markdown
 from dotenv import load_dotenv
@@ -36,8 +36,23 @@ except FileNotFoundError:
     logging.warning("No embeddings.json found. Run build.py to generate embeddings.")
 
 def cosine_similarity(a, b):
-    """Calculate cosine similarity between two vectors"""
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+    """Calculate cosine similarity between two vectors using pure Python"""
+    # Guard against empty vectors
+    if not a or not b:
+        return 0.0
+    # Compute dot product and norms
+    dot = 0.0
+    norm_a = 0.0
+    norm_b = 0.0
+    # Assume equal length embeddings
+    for x, y in zip(a, b):
+        dot += x * y
+        norm_a += x * x
+        norm_b += y * y
+    denom = math.sqrt(norm_a) * math.sqrt(norm_b)
+    if denom == 0:
+        return 0.0
+    return dot / denom
 
 def get_embedding(text):
     """Get embedding for text using OpenAI"""
