@@ -90,8 +90,15 @@ jobs:
       run: |
         if [ -n "$(find knowledge -name '*.md' 2>/dev/null | grep -v '.gitkeep')" ]; then
           echo "📚 Found knowledge files, generating embeddings..."
-          python build.py
-          echo "✅ Embeddings generated successfully"
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "⚠️ OPENAI_API_KEY not set in GitHub secrets"
+            echo "📝 Creating placeholder embeddings for deployment"
+            echo "[]" > embeddings.json
+          else
+            echo "🔑 OPENAI_API_KEY found, generating real embeddings..."
+            python build.py
+            echo "✅ Embeddings generated successfully"
+          fi
         else
           echo "📝 No knowledge files found, using empty embeddings"
           echo "[]" > embeddings.json
