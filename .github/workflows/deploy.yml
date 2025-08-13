@@ -1,16 +1,15 @@
-name: Deploy MindSynth
+name: Build and Validate MindSynth
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-    types: [ closed ]
+    types: [ opened, synchronize ]
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     
     steps:
     - name: Checkout code
@@ -71,8 +70,27 @@ jobs:
             exit(1)
         " || echo "✓ Application validation completed"
         
-    # Add your deployment steps here (e.g., Docker build, cloud deployment)
-    - name: Deploy to production
+    - name: Validate Vercel configuration
       run: |
-        echo "🚀 Ready for deployment!"
-        echo "Add your deployment commands here (Docker, Railway, Heroku, etc.)"
+        echo "✓ Vercel configuration valid"
+        if [ -f "vercel.json" ]; then
+          echo "✓ Found vercel.json"
+        else
+          echo "✗ Missing vercel.json"
+          exit 1
+        fi
+        
+        if [ -f "requirements.txt" ]; then
+          echo "✓ Found requirements.txt"
+        else
+          echo "✗ Missing requirements.txt"
+          exit 1
+        fi
+        
+    - name: Ready for Vercel deployment
+      run: |
+        echo "🚀 MindSynth is ready for Vercel deployment!"
+        echo "📋 Next steps:"
+        echo "   1. Connect this repo to Vercel"
+        echo "   2. Set OPENAI_API_KEY environment variable"
+        echo "   3. Deploy will happen automatically on push to main"

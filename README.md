@@ -44,10 +44,26 @@ A personal knowledge base application that provides semantic search functionalit
 
 ## Deployment
 
+### Vercel Deployment (Recommended)
+
+1. **Fork this repository** to your GitHub account
+
+2. **Connect to Vercel**:
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Vercel will auto-detect the Flask app
+
+3. **Set Environment Variables** in Vercel dashboard:
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `SESSION_SECRET`: Random secure string
+
+4. **Deploy**: Vercel will automatically deploy on every push to main
+
 ### Environment Variables
 
 - `OPENAI_API_KEY`: Required for generating embeddings
 - `SESSION_SECRET`: For secure sessions (optional)
+- `FLASK_ENV`: Set to "production" for production
 
 ### Building Knowledge Base
 
@@ -58,6 +74,13 @@ python build.py
 ```
 
 This will generate `embeddings.json` with semantic vectors for search.
+
+### Custom Domain (toni.ltd)
+
+To use your custom domain:
+1. In Vercel dashboard, go to your project settings
+2. Add `toni.ltd` as a custom domain
+3. Configure DNS to point to Vercel
 
 ## Architecture
 
