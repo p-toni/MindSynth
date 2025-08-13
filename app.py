@@ -110,33 +110,35 @@ def search():
 
         query_embedding = get_query_embedding_cached(query)
 
-        # Calculate similarities across chunks if present
+        # Calculate one score per document (best matching chunk)
         scored = []
         for item in knowledge_base:
+            best_sim = -1.0
+            best_snippet = ''
+            best_chunk_index = 0
+
             if 'chunks' in item and item['chunks']:
                 for idx, ch in enumerate(item['chunks']):
-                    sim = cosine_similarity(query_embedding, ch['embedding'])
-                    if sim > 0.1:
-                        snippet = ch.get('text','')[:240]
-                        scored.append({
-                            'title': item['title'],
-                            'snippet': snippet + ('...' if len(ch.get('text',''))>240 else ''),
-                            'similarity': float(sim),
-                            'file': item['file'],
-                            'chunk_index': idx,
-                            'tags': item.get('tags', [])
-                        })
+                    sim = cosine_similarity(query_embedding, ch.get('embedding') or [])
+                    if sim > best_sim:
+                        best_sim = sim
+                        text = ch.get('text', '')
+                        best_snippet = text[:240] + ('...' if len(text) > 240 else '')
+                        best_chunk_index = idx
             elif 'embedding' in item:
-                sim = cosine_similarity(query_embedding, item['embedding'])
-                if sim > 0.1:
-                    scored.append({
-                        'title': item['title'],
-                        'snippet': item['content'][:240] + ('...' if len(item['content'])>240 else ''),
-                        'similarity': float(sim),
-                        'file': item['file'],
-                        'chunk_index': 0,
-                        'tags': item.get('tags', [])
-                    })
+                best_sim = cosine_similarity(query_embedding, item.get('embedding') or [])
+                text = item.get('content', '')
+                best_snippet = text[:240] + ('...' if len(text) > 240 else '')
+
+            if best_sim > 0.1:
+                scored.append({
+                    'title': item['title'],
+                    'snippet': best_snippet,
+                    'similarity': float(best_sim),
+                    'file': item['file'],
+                    'chunk_index': best_chunk_index,
+                    'tags': item.get('tags', [])
+                })
 
         scored.sort(key=lambda x: x['similarity'], reverse=True)
         total = len(scored)
