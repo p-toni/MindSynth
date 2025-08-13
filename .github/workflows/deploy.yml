@@ -98,8 +98,12 @@ jobs:
           echo "📚 Found knowledge files, generating embeddings..."
           if [ -z "$OPENAI_API_KEY" ]; then
             echo "⚠️ OPENAI_API_KEY not set in GitHub secrets"
-            echo "📝 Creating placeholder embeddings for deployment"
-            echo "[]" > embeddings.json
+            if [ -f embeddings.json ] && [ "$(wc -c < embeddings.json | tr -d ' ')" -gt 2 ]; then
+              echo "🛑 Keeping existing embeddings.json (non-empty). Skipping placeholder overwrite."
+            else
+              echo "📝 Creating placeholder embeddings.json locally (will not commit)"
+              echo "[]" > embeddings.json
+            fi
           else
             echo "🔑 OPENAI_API_KEY found, generating real embeddings..."
             python build.py
