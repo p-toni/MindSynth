@@ -1,0 +1,5 @@
+# Knowledge Directory
+
+This directory will contain your markdown knowledge files.
+
+Add `.md` files here and run `python build.py` to generate embeddings.

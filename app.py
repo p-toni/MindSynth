@@ -168,4 +168,8 @@ def set_security_headers(resp):
     return resp
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Use environment PORT for deployment platforms, fallback to 5000
+    port = int(os.environ.get('PORT', 5000))
+    # Use debug=False in production
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug)

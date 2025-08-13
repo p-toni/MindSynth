@@ -114,7 +114,7 @@ class KnowledgeSearch {
                              aria-label="Open ${this.escapeHtml(result.title)} (${matchPercent}% match)"
                              data-filename="${result.file}"
                              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.target.click()}"
-                             style="width:${size}px;height:${size}px;background:hsl(${Math.round(result.similarity * 120)}, 30%, ${20 + result.similarity * 40}%);animation-delay:${delay}s"
+                             style="width:${size}px;height:${size}px;background:${this.getIntellectualColor(result.similarity)};animation-delay:${delay}s"
                              data-tooltip-content='{"title":"${this.escapeHtml(result.title)}","summary":"${summary}","match":"${matchPercent}","tags":${JSON.stringify(tags)}}'>
                         </div>`;
                 }).join('')}
@@ -370,6 +370,28 @@ class KnowledgeSearch {
             console.error('Failed to load Twitter script');
         };
         document.head.appendChild(script);
+    }
+
+    getIntellectualColor(similarity) {
+        // Sophisticated, muted palette for intellectual/literary feel
+        // Using earthier, more contemplative tones
+        const baseColors = [
+            { h: 210, s: 15, l: 25 }, // Muted blue-gray
+            { h: 45, s: 18, l: 28 },  // Warm brown-gray  
+            { h: 160, s: 12, l: 30 }, // Sage green-gray
+            { h: 25, s: 20, l: 32 },  // Warm sepia
+            { h: 280, s: 8, l: 26 }   // Cool purple-gray
+        ];
+        
+        // Map similarity to color intensity and selection
+        const scaledSimilarity = Math.max(0, Math.min(1, similarity));
+        const colorIndex = Math.floor(scaledSimilarity * baseColors.length);
+        const color = baseColors[Math.min(colorIndex, baseColors.length - 1)];
+        
+        // Adjust lightness based on similarity (higher similarity = slightly lighter)
+        const adjustedLightness = color.l + (scaledSimilarity * 8);
+        
+        return `hsl(${color.h}, ${color.s}%, ${adjustedLightness}%)`;
     }
 
     addDotClickListeners() {
