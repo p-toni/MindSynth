@@ -224,32 +224,23 @@ class KnowledgeSearch {
         currentBtns.forEach(btn => {
             const t = btn.getAttribute('data-tag');
             const shouldRemove = toRemove.includes(t);
-            const isActive = this.selectedTags.has(t);
             if (shouldRemove) {
                 btn.classList.add('chip-exit');
                 btn.addEventListener('animationend', () => btn.remove(), { once: true });
-            } else {
-                // Sync active class for kept items
-                btn.classList.toggle('active', isActive);
             }
         });
 
         // Insert additions in next order
         toAdd.forEach(tag => {
             const btn = document.createElement('button');
-            btn.className = 'chip chip-enter' + (this.selectedTags.has(tag) ? ' active' : '');
+            btn.className = 'chip chip-enter';
             btn.setAttribute('data-tag', tag);
             btn.textContent = tag;
             btn.addEventListener('animationend', () => btn.classList.remove('chip-enter'), { once: true });
             btn.addEventListener('click', () => {
-                if (this.selectedTags.has(tag)) this.selectedTags.delete(tag);
-                else this.selectedTags.add(tag);
-                // Reset pagination when filters change
-                this.offset = 0;
-                if (!this.currentQuery) this.currentQuery = this.searchInput.value.trim();
-                this.performSearch(this.currentQuery, false);
-                // Refresh chip states
-                this.renderInlineTags(this.allTags);
+                this.searchInput.value = tag;
+                this.searchInput.focus();
+                this.searchInput.dispatchEvent(new Event('input', { bubbles: true }));
             });
             this.inlineTags.appendChild(btn);
         });
@@ -262,6 +253,16 @@ class KnowledgeSearch {
         next.forEach(tag => {
             const node = finalOrder.get(tag);
             if (node) this.inlineTags.appendChild(node);
+        });
+
+        // Ensure all chips (existing and new) insert tag into input on click
+        Array.from(this.inlineTags.querySelectorAll('.chip')).forEach(btn => {
+            btn.onclick = () => {
+                const tag = btn.getAttribute('data-tag');
+                this.searchInput.value = tag;
+                this.searchInput.focus();
+                this.searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            };
         });
 
         // Visibility handled by CSS focus-within; no hidden toggles here

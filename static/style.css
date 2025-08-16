@@ -1,3 +1,22 @@
+/* Align search input (row 1), then tags left + status right (row 2) */
+.search-box{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-row-gap: 6px;
+  grid-auto-rows: auto;
+  align-items: start;
+  position: relative;
+}
+.search-box > #searchInput{ grid-column: 1 / -1; grid-row: 1; }
+.search-box > .inline-tags{ grid-column: 1 / 2; grid-row: 2; }
+.search-box > .search-status{
+  grid-column: 2 / 3;
+  grid-row: 2;
+  align-self: center;
+  justify-self: end;
+  position: static;
+  margin-left: 8px;
+}
 /* Accessible screen-reader-only text */
 .sr-only {
   position: absolute;
@@ -53,7 +72,7 @@
 /* Filter chips */
 .inline-tags{
   display:flex;
-  align-items:flex-start;
+  align-items:center;
   gap:8px;
   margin-top:6px;
   opacity: 1;
@@ -177,7 +196,19 @@ header p{
   font-style:italic;
   letter-spacing: 0.3px;
 }
-.search-status{position:absolute;right:0;bottom:8px;color:#999;font-size:12px;font-style:italic}
+.search-status{
+  color:#999;
+  font-size:12px;
+  font-style:italic;
+  opacity:1;
+  transform: translateY(0);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.search-box:not(:focus-within) .search-status{
+  opacity:0;
+  transform: translateY(-6px);
+  pointer-events:none;
+}
 .results{flex:1;overflow-y:auto;min-height:0}
 footer{position:fixed;bottom:0;left:0;width:50vw;background:#fafafa;border-top:1px solid #eee;padding:20px 0;text-align:center;color:#555}
 footer h3{margin-bottom:12px;color:#333;font-size:1.2em;font-weight:normal;font-style:italic}
