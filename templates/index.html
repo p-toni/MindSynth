@@ -17,6 +17,10 @@
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Search your thoughts..." autocomplete="off">
                 <div class="search-status" id="searchStatus" aria-live="polite" aria-atomic="true"></div>
+                <div class="inline-tags" id="inlineTagsWrap">
+                    <span class="tags-label" id="tagsLabel" hidden>Tags</span>
+                    <div id="inlineTags" class="chips" hidden></div>
+                </div>
             </div>
 
             <div class="results" id="results" aria-live="polite">

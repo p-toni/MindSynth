@@ -9,6 +9,21 @@ class KnowledgeSearch {
         this.closePanel = document.getElementById('closePanel');
         this.searchTimeout = null;
         this.previousActiveElement = null;
+
+        // Inline tags container below search input (new UX)
+        this.inlineTags = document.getElementById('inlineTags');
+        this.tagsLabel = document.getElementById('tagsLabel');
+        this.inlineTagsWrap = document.getElementById('inlineTagsWrap');
+        this.searchBox = this.searchInput ? this.searchInput.closest('.search-box') : null;
+        this.tagsVisible = false;
+
+        // Search state
+        this.currentQuery = '';
+        this.limit = 30;
+        this.offset = 0;
+        this.sort = 'relevance'; // kept for API compatibility, but no selector now
+        this.selectedTags = new Set();
+        this.allTags = [];
         
         console.log('KnowledgeSearch constructor - elements found:', {
             searchInput: !!this.searchInput,
@@ -28,6 +43,31 @@ class KnowledgeSearch {
         
         this.searchInput.addEventListener('input', () => this.handleSearch());
         this.closePanel.addEventListener('click', () => this.hidePanel());
+
+        // Show tags under input on focus
+        this.searchInput.addEventListener('focus', async () => {
+            try {
+                this.tagsVisible = true;
+                await this.updateInlineTags(this.searchInput.value.trim());
+                // Rely on CSS :focus-within to reveal wrapper; no hidden toggles
+            } catch (e) { console.warn('Failed to load tags', e); }
+        });
+        this.searchInput.addEventListener('blur', () => {
+            // Delay to allow chip clicks to register
+            setTimeout(() => {
+                const ae = document.activeElement;
+                const insideChips = this.inlineTagsWrap && this.inlineTagsWrap.contains(ae);
+                const insideSearch = this.searchBox && this.searchBox.contains(ae);
+                if (!insideChips && !insideSearch) this.hideInlineTags();
+            }, 120);
+        });
+
+        // Click-away: hide tags if clicking outside search area and chips
+        document.addEventListener('mousedown', (e) => {
+            const inSearch = this.searchBox && this.searchBox.contains(e.target);
+            const inChips = this.inlineTagsWrap && this.inlineTagsWrap.contains(e.target);
+            if (!inSearch && !inChips) this.hideInlineTags();
+        });
         
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') this.hidePanel();
@@ -64,18 +104,28 @@ class KnowledgeSearch {
         if (!query) {
             this.showWelcome();
             this.status.textContent = '';
+            // Update tags to overall top when cleared
+            this.updateInlineTags('').catch(() => {});
             return;
         }
         
         this.status.textContent = 'SEARCHING...';
-        this.searchTimeout = setTimeout(() => this.performSearch(query), 300);
+        this.searchTimeout = setTimeout(() => {
+            this.currentQuery = query;
+            this.offset = 0; // reset pagination for new query
+            // Update tags for this query
+            this.updateInlineTags(query).catch(() => {});
+            this.performSearch(query, false);
+        }, 300);
     }
 
-    async performSearch(query) {
+    async performSearch(query, append = false) {
         try {
-            const response = await fetch(`/search?q=${encodeURIComponent(query)}&limit=30&offset=0`);
+            const tagsParam = [...this.selectedTags].join(',');
+            const url = `/search?q=${encodeURIComponent(query)}&limit=${this.limit}&offset=${this.offset}&sort=${encodeURIComponent(this.sort)}${tagsParam ? `&tags=${encodeURIComponent(tagsParam)}` : ''}`;
+            const response = await fetch(url);
             const payload = await response.json();
-            this.displayResults(payload.results || [], query, payload.total || 0);
+            this.displayResults(payload.results || [], query, payload.total || 0, append);
         } catch (error) {
             console.error('Search error:', error);
             this.status.textContent = 'SEARCH ERROR';
@@ -84,7 +134,7 @@ class KnowledgeSearch {
         }
     }
 
-    displayResults(results, query, total) {
+    displayResults(results, query, total, append = false) {
         console.log('Displaying results:', results.length, 'total:', total);
         
         if (!results.length) {
@@ -93,10 +143,13 @@ class KnowledgeSearch {
                     <h3>NO RESULTS FOUND</h3>
                     <p>Try different search terms or verify your knowledge base</p>
                 </div>`;
+            if (this.toolbar) this.toolbar.hidden = true;
             return;
         }
 
-        const html = `
+        // Inline tags remain as global set; no per-result rebuild required
+
+        const dotsHtml = `
             <div class="dots-grid">
                 ${results.map(result => {
                     const size = Math.round(8 + result.similarity * 16);
@@ -120,21 +173,122 @@ class KnowledgeSearch {
                 }).join('')}
             </div>`;
 
-        const more = total > results.length ? 
+        const canShowMore = total > (this.offset + results.length);
+        const more = canShowMore ? 
             `<div style="text-align:center;margin-top:16px;">
                 <button id="showMore" class="close-panel" style="font-size:14px">Show more</button>
              </div>` : '';
 
-        this.results.innerHTML = html + more;
+        // No toolbar now
+
+        if (append && this.results.querySelector('.dots-grid')) {
+            this.results.querySelector('.dots-grid').insertAdjacentHTML('beforeend', dotsHtml.replace('<div class="dots-grid">','').replace('</div>',''));
+            // Update Show more area
+            const moreContainer = this.results.querySelector('#showMore')?.parentElement?.parentElement;
+            if (moreContainer) moreContainer.remove();
+            if (canShowMore) this.results.insertAdjacentHTML('beforeend', more);
+        } else {
+            this.results.innerHTML = dotsHtml + more;
+        }
         this.addTooltipListeners();
         this.addDotClickListeners();
         
         const btn = document.getElementById('showMore');
         if (btn) {
-            btn.addEventListener('click', () => alert('Pagination UI placeholder'));
+            btn.addEventListener('click', () => {
+                // Increment offset and fetch next page, appending
+                this.offset += this.limit;
+                this.performSearch(this.currentQuery, true);
+            });
         }
         
         console.log('Results displayed, dots created:', document.querySelectorAll('.dot').length);
+    }
+
+    renderInlineTags(allTags) {
+        if (!this.inlineTags) return;
+        if (!allTags.length || !this.tagsVisible) {
+            this.inlineTags.innerHTML = '';
+            return;
+        }
+        const next = this.normalizeTags(allTags).slice(0, 5);
+        // Collect current tags from DOM
+        const currentBtns = Array.from(this.inlineTags.querySelectorAll('.chip'));
+        const current = currentBtns.map(b => b.getAttribute('data-tag'));
+
+        const toRemove = current.filter(t => !next.includes(t));
+        const toAdd = next.filter(t => !current.includes(t));
+        const toUpdate = next.filter(t => current.includes(t));
+
+        // Remove with exit animation
+        currentBtns.forEach(btn => {
+            const t = btn.getAttribute('data-tag');
+            const shouldRemove = toRemove.includes(t);
+            const isActive = this.selectedTags.has(t);
+            if (shouldRemove) {
+                btn.classList.add('chip-exit');
+                btn.addEventListener('animationend', () => btn.remove(), { once: true });
+            } else {
+                // Sync active class for kept items
+                btn.classList.toggle('active', isActive);
+            }
+        });
+
+        // Insert additions in next order
+        toAdd.forEach(tag => {
+            const btn = document.createElement('button');
+            btn.className = 'chip chip-enter' + (this.selectedTags.has(tag) ? ' active' : '');
+            btn.setAttribute('data-tag', tag);
+            btn.textContent = tag;
+            btn.addEventListener('animationend', () => btn.classList.remove('chip-enter'), { once: true });
+            btn.addEventListener('click', () => {
+                if (this.selectedTags.has(tag)) this.selectedTags.delete(tag);
+                else this.selectedTags.add(tag);
+                // Reset pagination when filters change
+                this.offset = 0;
+                if (!this.currentQuery) this.currentQuery = this.searchInput.value.trim();
+                this.performSearch(this.currentQuery, false);
+                // Refresh chip states
+                this.renderInlineTags(this.allTags);
+            });
+            this.inlineTags.appendChild(btn);
+        });
+
+        // Reorder to match `next`
+        const finalOrder = new Map();
+        Array.from(this.inlineTags.querySelectorAll('.chip')).forEach(btn => {
+            finalOrder.set(btn.getAttribute('data-tag'), btn);
+        });
+        next.forEach(tag => {
+            const node = finalOrder.get(tag);
+            if (node) this.inlineTags.appendChild(node);
+        });
+
+        // Visibility handled by CSS focus-within; no hidden toggles here
+    }
+
+    async updateInlineTags(query) {
+        const q = (query || '').trim();
+        const url = q ? `/tags?q=${encodeURIComponent(q)}&limit=5` : `/tags?limit=5`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        // Normalize to string tags array
+        this.allTags = this.normalizeTags(data.map(x => typeof x === 'string' ? x : (x.tag || '')));
+        this.renderInlineTags(this.allTags);
+    }
+
+    normalizeTags(list) {
+        const set = new Set();
+        for (const raw of list || []) {
+            const t = String(raw || '').trim().toLowerCase();
+            if (!t) continue;
+            if (!set.has(t)) set.add(t);
+        }
+        return Array.from(set);
+    }
+
+    hideInlineTags() {
+        this.tagsVisible = false;
     }
 
     showWelcome() {
