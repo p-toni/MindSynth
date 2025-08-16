@@ -206,13 +206,22 @@ def search():
 
             # If no query, include the document (tag filtering happens below)
             if query_embedding is None or best_sim > 0.1:
+                # Timestamps from build (fallback to filesystem)
+                try:
+                    fs_mtime = os.path.getmtime(os.path.join('knowledge', item['file']))
+                    fs_ctime = os.path.getctime(os.path.join('knowledge', item['file']))
+                except Exception:
+                    fs_mtime = 0
+                    fs_ctime = 0
                 scored.append({
                     'title': item['title'],
                     'snippet': best_snippet,
                     'similarity': float(best_sim),
                     'file': item['file'],
                     'chunk_index': best_chunk_index,
-                    'tags': [t.strip().lower() for t in (item.get('tags', []) or []) if isinstance(t, str) and t.strip()]
+                    'tags': [t.strip().lower() for t in (item.get('tags', []) or []) if isinstance(t, str) and t.strip()],
+                    'created_ts': float(item.get('created_ts') or fs_ctime or 0),
+                    'modified_ts': float(item.get('modified_ts') or fs_mtime or 0)
                 })
 
         # Optional tag filtering (AND semantics)
@@ -222,16 +231,13 @@ def search():
                 return all(t in item_tags for t in req_tags)
             scored = [r for r in scored if has_all_tags(r)]
 
-        # Optional sorting
+        # Optional sorting using timestamps from build (fallback to fs mtime)
         if sort in ('newest', 'oldest'):
-            # Attach mtime if possible (from knowledge files); missing treated as 0
-            for r in scored:
-                try:
-                    mtime = os.path.getmtime(os.path.join('knowledge', r['file']))
-                except Exception:
-                    mtime = 0
-                r['_mtime'] = mtime
-            scored.sort(key=lambda x: x.get('_mtime', 0), reverse=(sort == 'newest'))
+            if sort == 'newest':
+                scored.sort(key=lambda x: x.get('modified_ts', 0), reverse=True)
+            else:  # oldest
+                # Prefer created_ts; fallback to modified_ts
+                scored.sort(key=lambda x: (x.get('created_ts') or x.get('modified_ts') or 0))
         else:
             # Default: relevance
             scored.sort(key=lambda x: x['similarity'], reverse=True)

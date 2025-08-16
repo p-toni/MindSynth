@@ -272,6 +272,13 @@ def process_md_files():
             content_hash = hashlib.sha256(base_text_for_embedding.encode('utf-8')).hexdigest()
 
             prev = prev_map.get(md_file.name)
+            # File timestamps
+            try:
+                modified_ts = os.path.getmtime(md_file)
+                created_ts = os.path.getctime(md_file)
+            except Exception:
+                modified_ts = 0
+                created_ts = 0
             if prev and prev.get('content_hash') == content_hash:
                 # Reuse previous entry as-is (fast path)
                 prev['title'] = title
@@ -280,6 +287,11 @@ def process_md_files():
                 prev['is_url'] = is_url
                 prev['source_url'] = url if is_url else None
                 prev['tags'] = tags
+                # Preserve created_ts if present, otherwise set
+                if 'created_ts' not in prev or not prev['created_ts']:
+                    prev['created_ts'] = created_ts
+                # Always update modified_ts from filesystem
+                prev['modified_ts'] = modified_ts
                 knowledge_base.append(prev)
                 logging.info(f"✓ Unchanged {md_file.name}, reused embeddings")
                 continue
@@ -309,7 +321,9 @@ def process_md_files():
                 'tags': tags,
                 'chunks': chunk_objs,
                 'embedding': doc_embedding,
-                'content_hash': content_hash
+                'content_hash': content_hash,
+                'created_ts': created_ts,
+                'modified_ts': modified_ts
             })
             
             logging.info(f"✓ Processed {md_file.name}: {title}")
