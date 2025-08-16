@@ -23,7 +23,7 @@ I build products where **AI, software integrity, and human judgment** meet. My l
 - **MindSynth.** A minimal personal knowledge tool with **semantic search** and a **dot-based visualization** to surface non-obvious connections—built to externalize thinking and make pattern discovery feel effortless. 
 
 ## Background (snapshot)
-Product leadership across AI, data, and platform integrity; founder experience; earlier stints in analytics and growth. Recent roles span large-scale orgs and startups, with impact anchored in instrumentation, reliability, and user-centric design. (Based on LinkedIn export.) 
+Product leadership across AI, data, and platform integrity; founder experience; earlier stints in analytics and growth. Recent roles span large-scale orgs and startups, with impact anchored in instrumentation, reliability, and user-centric design.
 
 ## Elsewhere
 - Writing/notes: MindSynth repo + personal knowledge garden.
