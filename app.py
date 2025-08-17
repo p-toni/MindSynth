@@ -149,7 +149,8 @@ def list_tags():
         for item in knowledge_base:
             for t in item.get('tags', []) or []:
                 if isinstance(t, str):
-                    key = t.strip()
+                    # Normalize case to avoid duplicate tags like 'AI' and 'ai'
+                    key = t.strip().lower()
                     if not key:
                         continue
                     counts[key] = counts.get(key, 0) + 1
