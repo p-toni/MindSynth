@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Knowledge Search</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% if is_mobile %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}">
+    {% endif %}
 </head>
 <body>
     <div class="container">
@@ -62,6 +65,9 @@
             }(document, "script", "twitter-wjs"));
         }
     </script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    {% if is_mobile %}
+    <script src="{{ url_for('static', filename='mobile.js') }}" defer></script>
+    {% endif %}
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>

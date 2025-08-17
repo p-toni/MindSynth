@@ -1,0 +1,13 @@
+/* Mobile-specific overrides */
+@media (max-width: 1024px) {
+  .content-panel {
+    width: 100vw;
+  }
+}
+
+button,
+.chip,
+.dot {
+  min-width: 44px;
+  min-height: 44px;
+}

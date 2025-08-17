@@ -85,29 +85,11 @@ def allowed_html():
     }
     return tags, attrs
 
-@app.route('/')
-def index():
-    """Main page"""
-    feature_toolbar = os.environ.get("FEATURE_TOOLBAR", "0") == "1"
-    return render_template('index.html', total_docs=len(knowledge_base), feature_toolbar=feature_toolbar)
-
-@app.route('/tags')
-def list_tags():
-    """Return top tags. If q provided, rank tags by similarity-weighted score; else by overall count.
-    Query params: q (optional), limit (default 5)
-    """
-    try:
-        limit = max(1, min(20, int(request.args.get('limit', 5))))
-    except ValueError:
-        limit = 5
-    q = (request.args.get('q') or '').strip()
-
-    # If no knowledge
+def compute_tags(q: str, limit: int):
+    """Compute tag rankings based on optional query."""
     if not knowledge_base:
-        return jsonify([])
-
+        return []
     if not q:
-        # Overall top by count
         counts = {}
         for item in knowledge_base:
             for t in item.get('tags', []) or []:
@@ -117,9 +99,8 @@ def list_tags():
                         continue
                     counts[key] = counts.get(key, 0) + 1
         ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
-        return jsonify([{"tag": k, "count": v} for k, v in ranked[:limit]])
+        return [{"tag": k, "count": v} for k, v in ranked[:limit]]
 
-    # Query present: compute best-chunk similarity per doc and weight tag scores
     try:
         qe = get_query_embedding_cached(q)
     except Exception:
@@ -143,29 +124,143 @@ def list_tags():
                         key = t.strip().lower()
                         scores[key] = scores.get(key, 0.0) + float(best_sim)
 
-    # Fallback: if no scores (e.g., qe None), use counts
     if not scores:
         counts = {}
         for item in knowledge_base:
             for t in item.get('tags', []) or []:
                 if isinstance(t, str):
-                    # Normalize case to avoid duplicate tags like 'AI' and 'ai'
                     key = t.strip().lower()
                     if not key:
                         continue
                     counts[key] = counts.get(key, 0) + 1
         ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
-        return jsonify([{"tag": k, "count": v} for k, v in ranked[:limit]])
+        return [{"tag": k, "count": v} for k, v in ranked[:limit]]
 
     ranked = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
-    return jsonify([{"tag": k, "score": v} for k, v in ranked[:limit]])
+    return [{"tag": k, "score": v} for k, v in ranked[:limit]]
+
+def perform_search(query: str, req_tags, sort: str, limit: int, offset: int):
+    """Core search implementation reused by desktop and mobile endpoints."""
+    if (not query and not req_tags) or not knowledge_base:
+        return {"total": 0, "results": []}
+
+    cache_key = f"{query}|{limit}|{offset}|{','.join(req_tags)}|{sort}"
+    if cache_key in results_cache:
+        return results_cache[cache_key]
+
+    query_embedding = get_query_embedding_cached(query) if query else None
+
+    scored = []
+    for item in knowledge_base:
+        best_sim = -1.0
+        best_snippet = ''
+        best_chunk_index = 0
+
+        if 'chunks' in item and item['chunks']:
+            for idx, ch in enumerate(item['chunks']):
+                sim = cosine_similarity(query_embedding, ch.get('embedding') or []) if query_embedding is not None else 0.0
+                if sim > best_sim:
+                    best_sim = sim
+                    text = ch.get('text', '')
+                    best_snippet = text[:240] + ('...' if len(text) > 240 else '')
+                    best_chunk_index = idx
+        elif 'embedding' in item:
+            best_sim = cosine_similarity(query_embedding, item.get('embedding') or []) if query_embedding is not None else 0.0
+            text = item.get('content', '')
+            best_snippet = text[:240] + ('...' if len(text) > 240 else '')
+
+        if query_embedding is None or best_sim > 0.1:
+            try:
+                fs_mtime = os.path.getmtime(os.path.join('knowledge', item['file']))
+                fs_ctime = os.path.getctime(os.path.join('knowledge', item['file']))
+            except Exception:
+                fs_mtime = 0
+                fs_ctime = 0
+            scored.append({
+                'title': item['title'],
+                'snippet': best_snippet,
+                'similarity': float(best_sim),
+                'file': item['file'],
+                'chunk_index': best_chunk_index,
+                'tags': [t.strip().lower() for t in (item.get('tags', []) or []) if isinstance(t, str) and t.strip()],
+                'created_ts': float(item.get('created_ts') or fs_ctime or 0),
+                'modified_ts': float(item.get('modified_ts') or fs_mtime or 0)
+            })
+
+    if req_tags:
+        def has_all_tags(r):
+            item_tags = {t.lower() for t in (r.get('tags') or [])}
+            return all(t in item_tags for t in req_tags)
+        scored = [r for r in scored if has_all_tags(r)]
+
+    if sort in ('newest', 'oldest'):
+        if sort == 'newest':
+            scored.sort(key=lambda x: x.get('modified_ts', 0), reverse=True)
+        else:
+            scored.sort(key=lambda x: (x.get('created_ts') or x.get('modified_ts') or 0))
+    else:
+        scored.sort(key=lambda x: x['similarity'], reverse=True)
+
+    total = len(scored)
+    page = scored[offset:offset+limit]
+    payload = {"total": total, "results": page}
+    results_cache[cache_key] = payload
+    return payload
+
+def fetch_content_item(filename: str):
+    """Retrieve and sanitize content for a knowledge file."""
+    for item in knowledge_base:
+        if item['file'] == filename:
+            content_to_display = item['content']
+            html_content = markdown.markdown(content_to_display)
+            tags, attrs = allowed_html()
+            html_content = bleach.clean(html_content, tags=tags, attributes=attrs, strip=True)
+            return {
+                'title': item['title'],
+                'content': html_content,
+                'file': filename,
+                'is_url': item.get('is_url', False),
+                'source_url': item.get('source_url'),
+                'tags': item.get('tags', [])
+            }
+    return None
+@app.route('/')
+def index():
+    """Main page"""
+    feature_toolbar = os.environ.get("FEATURE_TOOLBAR", "0") == "1"
+    ua = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(k in ua for k in ['iphone', 'android', 'ipad', 'mobile'])
+    return render_template('index.html', total_docs=len(knowledge_base), feature_toolbar=feature_toolbar, is_mobile=is_mobile)
+
+@app.route('/tags')
+def list_tags():
+    """Return top tags. If q provided, rank tags by similarity-weighted score; else by overall count.
+    Query params: q (optional), limit (default 5)
+    """
+    try:
+        limit = max(1, min(20, int(request.args.get('limit', 5))))
+    except ValueError:
+        limit = 5
+    q = (request.args.get('q') or '').strip()
+    tags = compute_tags(q, limit)
+    return jsonify(tags)
+
+@app.route('/mobile/tags')
+def mobile_tags():
+    """Mobile-optimized tag endpoint with smaller limits."""
+    try:
+        limit = max(1, min(6, int(request.args.get('limit', 5))))
+    except ValueError:
+        limit = 5
+    q = (request.args.get('q') or '').strip()
+    tags = compute_tags(q, limit)
+    return jsonify(tags)
 
 @app.route('/search')
 @limiter.limit("60/minute")
 def search():
     """Search endpoint"""
     query = request.args.get('q', '').strip()
-    # Optional filters
     raw_tags = request.args.get('tags', '').strip()
     req_tags = [t.lower() for t in raw_tags.split(',') if t.strip()]
     sort = request.args.get('sort', 'relevance').lower()
@@ -174,105 +269,56 @@ def search():
         offset = max(0, int(request.args.get('offset', 0)))
     except ValueError:
         limit, offset = 20, 0
-    # Allow tag-only searches: only return empty if neither query nor tags
-    if (not query and not req_tags) or not knowledge_base:
-        return jsonify({"total": 0, "results": []})
-    
     try:
-        cache_key = f"{query}|{limit}|{offset}|{','.join(req_tags)}|{sort}"
-        if cache_key in results_cache:
-            return jsonify(results_cache[cache_key])
-
-        query_embedding = get_query_embedding_cached(query) if query else None
-
-        # Calculate one score per document (best matching chunk)
-        scored = []
-        for item in knowledge_base:
-            best_sim = -1.0
-            best_snippet = ''
-            best_chunk_index = 0
-
-            if 'chunks' in item and item['chunks']:
-                for idx, ch in enumerate(item['chunks']):
-                    sim = cosine_similarity(query_embedding, ch.get('embedding') or []) if query_embedding is not None else 0.0
-                    if sim > best_sim:
-                        best_sim = sim
-                        text = ch.get('text', '')
-                        best_snippet = text[:240] + ('...' if len(text) > 240 else '')
-                        best_chunk_index = idx
-            elif 'embedding' in item:
-                best_sim = cosine_similarity(query_embedding, item.get('embedding') or []) if query_embedding is not None else 0.0
-                text = item.get('content', '')
-                best_snippet = text[:240] + ('...' if len(text) > 240 else '')
-
-            # If no query, include the document (tag filtering happens below)
-            if query_embedding is None or best_sim > 0.1:
-                # Timestamps from build (fallback to filesystem)
-                try:
-                    fs_mtime = os.path.getmtime(os.path.join('knowledge', item['file']))
-                    fs_ctime = os.path.getctime(os.path.join('knowledge', item['file']))
-                except Exception:
-                    fs_mtime = 0
-                    fs_ctime = 0
-                scored.append({
-                    'title': item['title'],
-                    'snippet': best_snippet,
-                    'similarity': float(best_sim),
-                    'file': item['file'],
-                    'chunk_index': best_chunk_index,
-                    'tags': [t.strip().lower() for t in (item.get('tags', []) or []) if isinstance(t, str) and t.strip()],
-                    'created_ts': float(item.get('created_ts') or fs_ctime or 0),
-                    'modified_ts': float(item.get('modified_ts') or fs_mtime or 0)
-                })
-
-        # Optional tag filtering (AND semantics)
-        if req_tags:
-            def has_all_tags(r):
-                item_tags = {t.lower() for t in (r.get('tags') or [])}
-                return all(t in item_tags for t in req_tags)
-            scored = [r for r in scored if has_all_tags(r)]
-
-        # Optional sorting using timestamps from build (fallback to fs mtime)
-        if sort in ('newest', 'oldest'):
-            if sort == 'newest':
-                scored.sort(key=lambda x: x.get('modified_ts', 0), reverse=True)
-            else:  # oldest
-                # Prefer created_ts; fallback to modified_ts
-                scored.sort(key=lambda x: (x.get('created_ts') or x.get('modified_ts') or 0))
-        else:
-            # Default: relevance
-            scored.sort(key=lambda x: x['similarity'], reverse=True)
-        total = len(scored)
-        page = scored[offset:offset+limit]
-        payload = {"total": total, "results": page}
-        results_cache[cache_key] = payload
+        payload = perform_search(query, req_tags, sort, limit, offset)
         return jsonify(payload)
-        
     except Exception as e:
         logging.error(f"Search error: {e}")
         return jsonify({"total": 0, "results": []}), 500
 
+@app.route('/mobile/search')
+def mobile_search():
+    """Mobile-optimized search endpoint with reduced limits and payload."""
+    query = request.args.get('q', '').strip()
+    raw_tags = request.args.get('tags', '').strip()
+    req_tags = [t.lower() for t in raw_tags.split(',') if t.strip()]
+    sort = request.args.get('sort', 'relevance').lower()
+    try:
+        limit = max(1, min(15, int(request.args.get('limit', 12))))
+        offset = max(0, int(request.args.get('offset', 0)))
+    except ValueError:
+        limit, offset = 12, 0
+    payload = perform_search(query, req_tags, sort, limit, offset)
+    simplified = []
+    for r in payload.get('results', []):
+        simplified.append({
+            'title': r.get('title'),
+            'snippet': r.get('snippet', '')[:120] + ('...' if len(r.get('snippet', '')) > 120 else ''),
+            'similarity': r.get('similarity'),
+            'file': r.get('file'),
+            'tags': (r.get('tags') or [])[:3]
+        })
+    return jsonify({'total': payload.get('total', 0), 'results': simplified})
+
 @app.route('/content/<path:filename>')
 def get_content(filename):
     """Get full content of a knowledge file"""
-    for item in knowledge_base:
-        if item['file'] == filename:
-            content_to_display = item['content']
-            
-            # For URL-based files, use the content directly without extra formatting
-            # The content already includes proper source information
-            
-            html_content = markdown.markdown(content_to_display)
-            tags, attrs = allowed_html()
-            html_content = bleach.clean(html_content, tags=tags, attributes=attrs, strip=True)
-            return jsonify({
-                'title': item['title'],
-                'content': html_content,
-                'file': filename,
-                'is_url': item.get('is_url', False),
-                'source_url': item.get('source_url'),
-                'tags': item.get('tags', [])
-            })
+    item = fetch_content_item(filename)
+    if item:
+        return jsonify(item)
+    return jsonify({'error': 'Content not found'}), 404
+
+@app.route('/mobile/content/<path:filename>')
+def mobile_content(filename):
+    """Simplified content endpoint for mobile sheets"""
+    item = fetch_content_item(filename)
+    if item:
+        simplified = {
+            'title': item['title'],
+            'content': item['content'],
+            'tags': (item.get('tags') or [])[:6]
+        }
+        return jsonify(simplified)
     return jsonify({'error': 'Content not found'}), 404
 
 @app.after_request

@@ -19,7 +19,9 @@ class KnowledgeSearch {
 
         // Search state
         this.currentQuery = '';
-        this.limit = 30;
+        const cfg = window.KNOWLEDGE_CONFIG || {};
+        this.searchDelay = cfg.searchDelay || 300;
+        this.limit = cfg.limit || 30;
         this.offset = 0;
         this.sort = 'relevance'; // kept for API compatibility, but no selector now
         this.selectedTags = new Set();
@@ -116,7 +118,7 @@ class KnowledgeSearch {
             // Update tags for this query
             this.updateInlineTags(query).catch(() => {});
             this.performSearch(query, false);
-        }, 300);
+        }, this.searchDelay);
     }
 
     async performSearch(query, append = false) {
