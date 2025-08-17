@@ -24,6 +24,9 @@ class KnowledgeSearch {
         this.sort = 'relevance'; // kept for API compatibility, but no selector now
         this.selectedTags = new Set();
         this.allTags = [];
+        this.navSearch = document.getElementById('navSearch');
+        this.navLibrary = document.getElementById('navLibrary');
+        this.touchStartX = 0;
         
         console.log('KnowledgeSearch constructor - elements found:', {
             searchInput: !!this.searchInput,
@@ -74,12 +77,34 @@ class KnowledgeSearch {
         });
         
         document.addEventListener('click', e => {
-            if (this.panel.classList.contains('active') && 
-                !this.panel.contains(e.target) && 
+            if (this.panel.classList.contains('active') &&
+                !this.panel.contains(e.target) &&
                 !e.target.classList.contains('dot')) {
                 this.hidePanel();
             }
         });
+
+        if (this.navSearch) {
+            this.navSearch.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                this.searchInput.focus();
+            });
+        }
+        if (this.navLibrary) {
+            this.navLibrary.addEventListener('click', () => {
+                const footer = document.querySelector('footer');
+                if (footer) footer.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
+
+        this.panel.addEventListener('touchstart', e => {
+            this.touchStartX = e.changedTouches[0].clientX;
+        }, { passive: true });
+
+        this.panel.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].clientX;
+            if (touchEndX - this.touchStartX > 50) this.hidePanel();
+        }, { passive: true });
 
         this.searchInput.setAttribute('aria-label', 'Search knowledge');
         
